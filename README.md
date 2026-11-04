@@ -9,6 +9,7 @@ This repository is set up for **VS Code + Claude Code**. Claude Code reads `CLAU
 | Path | What it is |
 |---|---|
 | `apps/customer-web/` | **Customer web + PWA** (Next.js): browse, menus with options, checkout with Stripe (cards, Apple Pay, Google Pay), live tracking, Home/Office/Other addresses. Installable on phones. |
+| `apps/restaurant-web/` | **Restaurant portal + PWA** (Next.js): setup wizard, live orders board with sound and 5-minute countdown, menu editor, earnings, plan, delivery fee, taxes & fees, locations, hours, team. Installs on tablets, phones and desktops. |
 | `services/api/` | **Core API** the apps call: phone sign-in, restaurants, menus, ordering, dispatch (Uber Direct, DoorDash Drive, own drivers with locked offers and batching), driver app, admin. 32 tests. Reference: `docs/API.md`. |
 | `services/payments/` | Payments service: NestJS 11, Drizzle, Postgres, Stripe Connect (direct charges, delivery allocation, driver payouts, NYC minimum-pay top-ups, restaurant plans). 60 tests. |
 | `deploy/` | Production Docker Compose for one server: Postgres, both services, Caddy (automatic HTTPS), nightly backups. |
@@ -59,6 +60,7 @@ You need **Node 22**, **Docker Desktop**, **VS Code**, the **Stripe CLI** (`npm 
 ```bash
 npm run dev            # payments service on http://localhost:3000
 npm run dev:api        # core API on http://localhost:3001/v1 (sign-in codes print in this log)
+npm run dev:restaurant # restaurant portal on http://localhost:3200
 npm run dev:customer   # customer web on http://localhost:3100 (copy apps/customer-web/.env.example to .env.local first)
 npm run seed:admin -- +19175550123 "Your Name"   # first admin
 npm run seed:demo      # demo restaurant "Dhaka Kitchen" with a menu (payments must be running)

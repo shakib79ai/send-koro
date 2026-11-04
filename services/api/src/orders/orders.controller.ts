@@ -43,6 +43,9 @@ export class RestaurantOrdersController {
 
   @Get(':restaurantId/live') live(@CurrentUser() u: AuthUser, @Param('restaurantId') id: string, @Query('locationId') locationId?: string) { return run(() => this.orders.liveOrders(u, id, locationId)); }
   @Get(':restaurantId/history') history(@CurrentUser() u: AuthUser, @Param('restaurantId') id: string, @Query() q: unknown) { return run(() => this.orders.history(u, id, parse(History, q))); }
+  @Get(':restaurantId/summary') summary(@CurrentUser() u: AuthUser, @Param('restaurantId') id: string, @Query() q: unknown) {
+    return run(() => this.orders.summary(u, id, parse(z.object({ from: z.coerce.date(), to: z.coerce.date() }), q)));
+  }
   @Post('orders/:id/accept') accept(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: unknown) { return run(() => this.orders.accept(u, id, parse(Accept, b ?? {}).prepMinutes)); }
   @Post('orders/:id/decline') decline(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() b: unknown) { return run(() => this.orders.decline(u, id, parse(Decline, b).reason)); }
   @Post('orders/:id/preparing') preparing(@CurrentUser() u: AuthUser, @Param('id') id: string) { return run(() => this.orders.markPreparing(u, id)); }

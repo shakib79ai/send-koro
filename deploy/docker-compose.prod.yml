@@ -49,6 +49,11 @@ services:
     restart: unless-stopped
     depends_on: [api]
 
+  restaurant-web:
+    image: ${REGISTRY:-ghcr.io/shakib79ai/send-koro}/restaurant-web:${TAG:-latest}
+    restart: unless-stopped
+    depends_on: [api]
+
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -59,12 +64,13 @@ services:
     environment:
       API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in deploy/.env}
       CUSTOMER_DOMAIN: ${CUSTOMER_DOMAIN:?set CUSTOMER_DOMAIN in deploy/.env}
+      RESTAURANT_DOMAIN: ${RESTAURANT_DOMAIN:?set RESTAURANT_DOMAIN in deploy/.env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in deploy/.env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [api, payments, customer-web]
+    depends_on: [api, payments, customer-web, restaurant-web]
 
   backup:
     # Nightly pg_dump of both databases, kept 14 days. Copy ./backups off the server too.

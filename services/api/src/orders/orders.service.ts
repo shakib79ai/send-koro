@@ -11,7 +11,7 @@
  * Receipt: 3200 + 320 + 312 + 780 − 390 + 400 = 4622 = the amount authorised.
  */
 import { randomInt } from 'node:crypto';
-import { and, desc, eq, gte, inArray, isNotNull, lt, lte } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { addresses, deliveries, drivers, locationHours, locations, orders, restaurantFees, restaurants } from '../db/schema';
 import { priceCart, CartLineInput } from '../core/cart';
@@ -207,6 +207,39 @@ export class OrdersService {
     if (q.to) where.push(lte(orders.placedAt, q.to));
     const rows = await this.db.select().from(orders).where(and(...where)).orderBy(desc(orders.placedAt)).limit(q.limit ?? 100);
     return this.restaurantViews(rows);
+  }
+
+  /**
+   * Sales summary for the restaurant portal (earnings, plan). Counts orders the restaurant accepted.
+   * Tips are excluded (they go to couriers). Refunds and card processing live in Stripe/payments.
+   */
+  async summary(user: AuthUser, restaurantId: string, q: { from: Date; to: Date }) {
+    await this.restaurants.requireMember(user, restaurantId);
+    const accepted = sql`${orders.status} in ('accepted','preparing','ready','picked_up','delivered','completed')`;
+    const [t] = await this.db.select({
+      orders: sql<number>`count(*) filter (where ${accepted})::int`,
+      declined: sql<number>`count(*) filter (where ${orders.status} = 'declined')::int`,
+      inProgress: sql<number>`count(*) filter (where ${orders.status} in ('placed','accepted','preparing','ready','picked_up'))::int`,
+      foodCents: sql<number>`coalesce(sum(${orders.foodCents}) filter (where ${accepted}), 0)::bigint`,
+      serviceChargeCents: sql<number>`coalesce(sum(${orders.serviceChargeCents}) filter (where ${accepted}), 0)::bigint`,
+      taxCents: sql<number>`coalesce(sum(${orders.taxCents}) filter (where ${accepted}), 0)::bigint`,
+      deliveryPaidCents: sql<number>`coalesce(sum(${orders.restaurantDeliveryCents}) filter (where ${accepted}), 0)::bigint`,
+      avgAcceptSeconds: sql<number>`coalesce(avg(extract(epoch from (${orders.acceptedAt} - ${orders.placedAt}))) filter (where ${orders.acceptedAt} is not null), 0)::int`,
+    }).from(orders).where(and(eq(orders.restaurantId, restaurantId), gte(orders.placedAt, q.from), lt(orders.placedAt, q.to)));
+    const daily = await this.db.select({
+      day: sql<string>`to_char(${orders.placedAt} at time zone 'America/New_York', 'YYYY-MM-DD')`,
+      foodCents: sql<number>`coalesce(sum(${orders.foodCents}), 0)::bigint`,
+      orders: sql<number>`count(*)::int`,
+    }).from(orders).where(and(eq(orders.restaurantId, restaurantId), gte(orders.placedAt, q.from), lt(orders.placedAt, q.to), accepted))
+      .groupBy(sql`1`).orderBy(sql`1`);
+    const num = (v: unknown) => Number(v ?? 0);
+    return {
+      from: q.from, to: q.to,
+      orders: t.orders, declined: t.declined, inProgress: t.inProgress, avgAcceptSeconds: t.avgAcceptSeconds,
+      foodCents: num(t.foodCents), serviceChargeCents: num(t.serviceChargeCents), taxCents: num(t.taxCents), deliveryPaidCents: num(t.deliveryPaidCents),
+      commissionCents: 0,
+      daily: daily.map((d) => ({ day: d.day, foodCents: num(d.foodCents), orders: d.orders })),
+    };
   }
 
   private async restaurantViews(rows: Order[]) {

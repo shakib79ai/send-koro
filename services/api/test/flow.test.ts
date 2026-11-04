@@ -193,6 +193,11 @@ describe('ordering → third-party courier', () => {
     await app.dispatch.providerUpdate('uber_direct', del.providerDeliveryId!, 'delivered');
     expect((await app.state.load(orderId)).status).toBe('delivered');
 
+    // Restaurant sales summary: food, service charge and tax counted; tips excluded; $0 commission.
+    const sum = await app.orders.summary(s.owner, s.r.id, { from: new Date(Date.now() - 86_400_000), to: new Date(Date.now() + 60_000) });
+    expect(sum).toMatchObject({ orders: 1, foodCents: 3200, serviceChargeCents: 320, taxCents: 312, deliveryPaidCents: R, commissionCents: 0 });
+    expect(sum.daily).toHaveLength(1);
+
     // Admin sees the provider.
     expect((await app.admin.order(orderId)).delivery?.provider).toBe('uber_direct');
   });

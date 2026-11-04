@@ -35,3 +35,9 @@
 www.{$CUSTOMER_DOMAIN} {
 	redir https://{$CUSTOMER_DOMAIN}{uri} permanent
 }
+
+# Restaurant portal (web + PWA)
+{$RESTAURANT_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy restaurant-web:3000
+}
