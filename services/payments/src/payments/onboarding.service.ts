@@ -6,11 +6,11 @@
  *   (restaurant pays its processing fees; Stripe owns unrecoverable connected-account losses),
  *   plus a customer configuration so Send Koro can bill the restaurant's subscription with
  *   `customer_account` instead of a separate Customer object.
- * Drivers (own network): connected accounts set up like restaurants — full Stripe Dashboard,
- *   fees_collector = 'stripe', losses_collector = 'stripe' — with the recipient configuration
- *   (stripe_balance.stripe_transfers) because they receive weekly platform transfers rather than
- *   taking card payments. Confirm with Stripe that recipient accounts may use Stripe-collected fees
- *   (brief review Q3); if not, switch to fees_collector 'application' and book payout costs as delivery costs.
+ * Drivers (own network): recipient configuration only (stripe_balance.stripe_transfers), because
+ *   they receive weekly platform transfers rather than taking card payments. Stripe rejects the
+ *   full Dashboard and Stripe-collected fees/losses for recipient-only accounts (sandbox, 4 Nov 2026),
+ *   so drivers get the Express Dashboard and Send Koro is fees_collector and losses_collector
+ *   'application'. Driver account and payout costs are booked as delivery costs, never charged to drivers.
  */
 import type Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
@@ -76,9 +76,9 @@ export class OnboardingService {
       {
         display_name: d.name,
         contact_email: d.contactEmail,
-        dashboard: 'full',
+        dashboard: 'express',
         identity: { country: 'us', entity_type: 'individual' },
-        defaults: { currency: 'usd', locales: ['en-US'], responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } },
+        defaults: { currency: 'usd', locales: ['en-US'], responsibilities: { fees_collector: 'application', losses_collector: 'application' } },
         configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
         include: ['configuration.recipient', 'requirements'],
         metadata: { send_koro_type: 'driver', send_koro_driver_id: d.id },

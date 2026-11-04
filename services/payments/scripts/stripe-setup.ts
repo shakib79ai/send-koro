@@ -125,11 +125,11 @@ async function main() {
     }, { idempotencyKey: 'sandbox-restaurant-v1' });
     const rLink = await stripe.v2.core.accountLinks.create({ account: restaurant.id, use_case: { type: 'account_onboarding', account_onboarding: { configurations: ['merchant', 'customer'], refresh_url: `${portal}/refresh`, return_url: `${portal}/return` } } });
     const driver = await stripe.v2.core.accounts.create({
-      display_name: 'Sandbox – Rahim Uddin (driver)', contact_email: 'sandbox-driver@sendkoro.com', dashboard: 'full', identity: { country: 'us', entity_type: 'individual' },
-      defaults: { currency: 'usd', responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } },
+      display_name: 'Sandbox – Rahim Uddin (driver)', contact_email: 'sandbox-driver@sendkoro.com', dashboard: 'express', identity: { country: 'us', entity_type: 'individual' },
+      defaults: { currency: 'usd', responsibilities: { fees_collector: 'application', losses_collector: 'application' } },
       configuration: { recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } },
       metadata: { send_koro_type: 'driver', sandbox: 'true' },
-    }, { idempotencyKey: 'sandbox-driver-v2' });
+    }, { idempotencyKey: 'sandbox-driver-v3' });
     const dLink = await stripe.v2.core.accountLinks.create({ account: driver.id, use_case: { type: 'account_onboarding', account_onboarding: { configurations: ['recipient'], refresh_url: `${portal}/refresh`, return_url: `${portal}/return` } } });
     console.log(`  restaurant ${restaurant.id}\n    onboard: ${rLink.url}`);
     console.log(`  driver     ${driver.id}\n    onboard: ${dLink.url}`);

@@ -71,7 +71,10 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 
 ## Own drivers
 
-- **Connected Stripe accounts set up like restaurants** (3 Nov 2026): full Dashboard; Stripe collects fees and covers losses; recipient configuration for weekly transfers. Needs Stripe's written confirmation.
+- **Connected Stripe accounts with the Express Dashboard** (4 Nov 2026): recipient configuration for weekly transfers. Send Koro collects fees and covers losses (`fees_collector` and `losses_collector = application`).
+  - Stripe rejected the full Dashboard and Stripe-covered fees and losses for payout-only accounts in the sandbox. This replaces the 3 Nov "set up like restaurants" decision.
+  - Send Koro pays the driver accounts' Connect costs (about $2 per active driver a month plus a small per-payout fee) as a delivery cost. Drivers are never charged.
+  - Loss risk is low because drivers only receive transfers.
 - **No driver subscription and no fees charged to drivers** (decided 29 Oct, confirmed 3 Nov 2026).
 - **Rate card:** $2.50 pickup + $0.45 per minute + $0.75 per mile. Example: 2.0 mi and 18 min = **$12.10**.
 - **Two orders on one route** (batching) like Uber and DoorDash. Example: 2.8 mi and 24 min = **$15.40** for both. Each order is still paid fairly.
@@ -94,9 +97,10 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 |---|---|
 | Charge type | Direct charges on the restaurant's account |
 | Connect pricing | **Stripe handles pricing for your users** (no per-account fees for Send Koro on restaurant accounts) |
-| Losses | Stripe (`losses_collector = stripe`) |
-| Fees | Stripe collects from the connected account (`fees_collector = stripe`) |
+| Losses | Restaurants: Stripe (`losses_collector = stripe`). Drivers: Send Koro (`application`) |
+| Fees | Restaurants: Stripe collects from the connected account (`fees_collector = stripe`). Drivers: Send Koro (`application`) |
 | Restaurant Dashboard | Full Stripe Dashboard |
+| Driver Dashboard | Express Dashboard |
 | Onboarding | Stripe-hosted, Accounts v2 |
 | Billing | Pay-as-you-go (0.7% of subscription volume) until restaurant subscriptions exceed about $88k/month |
 | Stripe Tax | Off for orders (restaurants handle tax) |

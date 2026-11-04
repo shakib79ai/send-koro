@@ -4,6 +4,15 @@ Your brief says: "There is no Dashboard setting that automatically implements th
 
 Platform account (from the brief): `acct_1UVa9IQzpvBKCndf`
 
+## 0. Live account check (owner only, do now; no changes in code)
+
+From the developer setup guide (3 Nov 2026). An earlier live API check found the items below. Check them again in the Dashboard before you change anything.
+
+- [ ] **Legal structure.** The company name is *SHL GLOBAL CONSULTING INC*, but the structure was recorded as *sole proprietorship*. The owner confirms which is correct under **Settings → Business → Business details** before changing it. Don't use a different entity or make up verification details.
+- [ ] **Payout bank account.** It's still required. The owner adds the business bank account.
+- [ ] **Website verification** for https://sendkoro.com is pending. Make sure the site shows the business name, contact details, terms, privacy and refund policy.
+- [ ] **Live placeholder products.** `prod_VZ22McI8fFqJ4w` (restaurant) and `prod_VZ22tdJZUnxPaP` (driver) exist in live with no prices. Don't reuse them: the setup script creates `sk_restaurant_subscription` when you run it with live keys. Archive the driver placeholder, because there is no driver subscription (see `BUSINESS_MODEL.md`).
+
 ## 1. Sandbox (do now)
 
 - [ ] **Create a sandbox.** Dashboard → account switcher → **Sandboxes** → *Create sandbox* ("Send Koro dev"). Copy its keys from **Developers → API keys** into `.env`:
@@ -24,6 +33,7 @@ Platform account (from the brief): `acct_1UVa9IQzpvBKCndf`
   - Turn on "Email customers about failed payments".
 - [ ] **Customer portal.** **Settings → Billing → Customer portal**. Confirm the script's configuration: payment method update and invoice history on, cancellation off.
 - [ ] **Payment methods.** **Settings → Payment methods** (platform defaults that connected accounts inherit): Cards, Apple Pay, Google Pay and Link on. Add `sendkoro.com` under **Payment method domains**. The service also registers it on each restaurant account, which direct charges need.
+- [ ] **Risk and fraud.** **Radar** and **Connect → Risk**: review Radar for Platforms and the connected-account risk settings with Stripe, and turn on the fraud controls supported for direct charges.
 - [ ] **Team access.** **Settings → Team**. Give developers the *Developer* role, and finance the *Analyst* or *View only* role. Require 2-step login.
 - [ ] **Restricted key for the service (recommended).** **Developers → API keys → Create restricted key** with write access to: PaymentIntents, Refunds, Application fees, Transfers, Balance (read), Prices (read), Products (read), Subscriptions, Invoices, Checkout Sessions, Webhook endpoints, Payment method domains, Accounts v2, Account links. Use it as `STRIPE_SECRET_KEY` in production.
 

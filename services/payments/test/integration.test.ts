@@ -348,12 +348,12 @@ describe('onboarding (Accounts v2)', () => {
     expect(s).toEqual({ type: 'restaurant', active: true });
     expect(fake.callsTo('paymentMethodDomains.create')[0]).toMatchObject({ params: { domain_name: 'sendkoro.com' }, opts: { stripeAccount: acct } });
   });
-  it('driver account: connected like a restaurant (full dashboard, Stripe fees & losses) with recipient transfers', async () => {
+  it('driver account: Express dashboard, Send Koro collects fees & losses, recipient transfers only', async () => {
     const fake = createFakeStripe(); const svc = build(fake);
     const [d] = await db.insert(t.drivers).values({ name: 'Kemi', contactEmail: 'k@test' }).returning();
     await svc.onboarding.driverOnboardingLink(d.id);
     const p = fake.callsTo('v2.accounts.create')[0].params;
-    expect(p).toMatchObject({ dashboard: 'full', defaults: { responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } } });
+    expect(p).toMatchObject({ dashboard: 'express', defaults: { responsibilities: { fees_collector: 'application', losses_collector: 'application' } } });
     expect(p.configuration).toEqual({ recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } });
   });
 });

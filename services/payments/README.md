@@ -6,7 +6,7 @@ This service implements the Send Koro Stripe Developer Technical Brief v1.2 for 
 - **`application_fee_amount = D + T`.** This is the delivery budget plus 100% of the driver tip. It is recorded as a *delivery fulfilment allocation*, never as a food commission.
 - **Restaurant delivery rules.** Customer pays, restaurant pays, fixed or percentage split, or free above a minimum order. Each accepted rule is stored as a versioned consent and frozen into every quote.
 - **Refunds by component.** Food, service charge, tax, customer delivery, subsidy restoration and tip are refunded separately. The delivery allocation is returned explicitly with an application-fee refund.
-- **Own-driver payouts.** Drivers have connected Stripe accounts set up like restaurants: full Dashboard, and Stripe collects fees and covers losses. One idempotent transfer per order: the locked offer pay plus 100% of the tip. Payment waits ("owed") when the platform balance isn't available yet, and is held while a dispute is open.
+- **Own-driver payouts.** Drivers have connected Stripe accounts with the Express Dashboard. Send Koro collects their fees and covers losses (`application`), because Stripe doesn't allow Stripe-collected fees for payout-only accounts. One idempotent transfer per order: the locked offer pay plus 100% of the tip. Payment waits ("owed") when the platform balance isn't available yet, and is held while a dispute is open.
 - **Processing fees on delivery come out of the delivery money.** This applies to own drivers and third-party couriers alike. The restaurant's food proceeds don't pay them, and neither do the driver's pay or tip (see below).
 - **Third-party couriers (Uber Direct / DoorDash Drive).** Each order's obligation, tip and invoice line is recorded and reconciled. Couriers are paid by invoice, not through Connect.
 - **Restaurant subscriptions (restaurants only — drivers pay nothing).** Billed through Accounts v2 `customer_account`. The tier is set from the previous New York calendar month's net food sales by a month-end job, with no proration. A safety check pauses any renewal invoice that has no tier snapshot.
@@ -97,7 +97,7 @@ These are the brief's review questions, and the code assumes each answer is "yes
 
 1. Direct charges with `fees_collector = stripe`, `losses_collector = stripe` and the full Dashboard for restaurants.
 2. That `application_fee_amount` may carry the delivery budget (including the restaurant-funded part) plus the full tip, less the delivery's processing-fee share.
-3. That own-driver accounts with only the recipient configuration may use `fees_collector = stripe` / `losses_collector = stripe` and the full Dashboard, like restaurants. If not, switch drivers to `application` and book their payout costs as delivery costs.
+3. ~~That own-driver accounts with only the recipient configuration may use `fees_collector = stripe` / `losses_collector = stripe` and the full Dashboard.~~ **Answered in the sandbox (4 Nov 2026): no.** Drivers now use the Express Dashboard with `application` fees and losses, and payout costs are booked as delivery costs.
 4. That platform-to-driver transfers can be funded from those application-fee receipts.
 5. That Send Koro's branded marketplace presentation fits restaurant-as-merchant direct charges.
 6. That Billing via `customer_account` works for Accounts v2 restaurants.

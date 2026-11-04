@@ -1,6 +1,6 @@
 # Send Koro — Stripe Developer Technical Brief (v1.2)
 
-> Converted from the original Word document. Business decisions made after v1.2 are recorded in `BUSINESS_MODEL.md`, which takes precedence. In particular: **no driver subscription**, own drivers set up like restaurants, and processing fees on delivery paid from the delivery money.
+> Converted from the original Word document. Business decisions made after v1.2 are recorded in `BUSINESS_MODEL.md`, which takes precedence. In particular: **no driver subscription**, own drivers on Express accounts with Send Koro-collected fees (4 Nov 2026), and processing fees on delivery paid from the delivery money.
 
 Prepared for Shakib Hasan Haider \| 3 November 2026 \| Version 1.2
 
