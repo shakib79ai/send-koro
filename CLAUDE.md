@@ -13,6 +13,7 @@ Read before changing anything money-related:
 ```
 apps/customer-web/   Customer web + PWA (Next.js 15). Totals come only from the API; Stripe.js uses the restaurant's account.
 apps/restaurant-web/ Restaurant portal web + PWA (Next.js 15): live orders, menu, earnings, plan, settings. Roles enforced by the API.
+apps/admin-web/      Admin console (Next.js 15): operations, orders/refunds, dispatch, partners, money (payouts, settlements, billing), tax compliance.
 services/api/        Core API (NestJS 11 + Drizzle): sign-in, restaurants, menus, orders, dispatch, drivers, admin. Has its own CLAUDE.md.
 services/payments/   Payments service (Stripe Connect). Only this service talks to Stripe. Has its own CLAUDE.md.
 deploy/              Production Docker Compose, Caddy (auto-HTTPS), env templates
@@ -33,7 +34,7 @@ Stack: TypeScript, NestJS, Drizzle ORM, PostgreSQL, Next.js (for future web apps
 | Install | `npm run setup` |
 | Start Postgres (Docker) | `npm run db:up` |
 | Migrate | `npm run db:migrate` |
-| Run payments (:3000) / core API (:3001) / customer web (:3100) / restaurant portal (:3200) | `npm run dev` / `npm run dev:api` / `npm run dev:customer` / `npm run dev:restaurant` |
+| Run payments (:3000) / core API (:3001) / customer web (:3100) / restaurant portal (:3200) / admin (:3300) | `npm run dev` / `npm run dev:api` / `npm run dev:customer` / `npm run dev:restaurant` / `npm run dev:admin` |
 | Tests, both services (needs `db:up`) | `npm test` (`npm run test:api`, `npm run test:payments`) |
 | First admin / demo restaurant | `npm run seed:admin -- +1917… "Name"` / `npm run seed:demo` |
 | Typecheck | `npm run typecheck` |

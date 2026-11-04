@@ -1,15 +1,14 @@
 'use client';
-import { useState } from 'react';
 import { useData } from '@/lib/admin';
 import { Kpi, Money, PROVIDER, Status } from '@/components/bits';
-import { RangeKey, RangePicker, rangeQuery } from '@/components/Range';
+import { RangePicker, useRange } from '@/components/Range';
 
 interface Overview { paidOrders: number; volumeCents: number; tipCents: number; applicationFeeCents: number; deliveryFeeShareCents: number; commissionCents: number; refunds: { applicationFeeCents: number }; driverTransfers: { status: string; count: number; cents: number }[]; supplierObligations: { provider: string; status: string; count: number; quotedCents: number; tipCents: number }[] }
 interface Sub { restaurantId: string; restaurantName: string; status: string; stripeSubscriptionId: string; latestTier: { period: string; netBaseCents: number; priceLookupKey: string } | null }
 
 export default function Billing() {
-  const [range, setRange] = useState<RangeKey>('month');
-  const ov = useData<Overview>(`/admin/money/overview?${rangeQuery(range)}`, [range]);
+  const { range, setRange, query } = useRange();
+  const ov = useData<Overview>(`/admin/money/overview?${query}`);
   const subs = useData<Sub[]>('/admin/money/billing');
   const o = ov.data;
   const driversPaid = o?.driverTransfers.filter((t) => t.status === 'paid').reduce((a, t) => a + t.cents, 0) ?? 0;

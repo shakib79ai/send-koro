@@ -375,6 +375,8 @@ describe('admin reports', () => {
     const p = await reports.accountPayouts('restaurant', r.id);
     expect(p).toMatchObject({ stripeAccountId: 'acct_rest1', payouts: [{ id: 'po_1', amountCents: 12345 }] });
     expect(fake.callsTo('payouts.list')[0].opts).toMatchObject({ stripeAccount: 'acct_rest1' });
+    (fake.stripe as any).payouts.list = async () => { throw new Error('connection refused'); };
+    expect(await reports.accountPayouts('restaurant', r.id)).toMatchObject({ balance: null, payouts: [], error: expect.stringContaining('connection refused') });
     expect((await reports.driverSettlements({})).transfers[0]).toMatchObject({ amountCents: 1300, driverName: 'Rahim Uddin' });
     expect(await reports.billing()).toEqual([]);
   });

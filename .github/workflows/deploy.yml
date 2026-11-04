@@ -27,6 +27,7 @@ jobs:
           - { service: payments, context: services/payments }
           - { service: customer-web, context: apps/customer-web }
           - { service: restaurant-web, context: apps/restaurant-web }
+          - { service: admin-web, context: apps/admin-web }
     steps:
       - uses: actions/checkout@v4
         with:

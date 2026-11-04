@@ -5,6 +5,7 @@ One VPS runs everything with Docker: Postgres, the core API, the payments servic
 ```
 Internet ──► Caddy (443, auto-HTTPS) ──┬─► customer-web:3000   sendkoro.com (customer web + PWA)
                                        ├─► restaurant-web:3000 restaurants.sendkoro.com (restaurant portal + PWA)
+                                       ├─► admin-web:3000      admin.sendkoro.com (admin console)
                                        ├─► api:3001        api.sendkoro.com: apps, Uber Direct / DoorDash webhooks, live updates
                                        └─► payments:3000   api.sendkoro.com/webhooks/stripe* only (internal API never public)
                          api ──(internal key)──► payments ──► Stripe (direct charges on restaurant accounts)
@@ -14,7 +15,7 @@ Internet ──► Caddy (443, auto-HTTPS) ──┬─► customer-web:3000   s
 ## 1. Server (once, about 30 minutes)
 
 1. **Create a VPS:** Ubuntu 24.04, 2 vCPU and 4 GB RAM, in a US East region (DigitalOcean, Hetzner Ashburn, AWS Lightsail and similar all work).
-2. **DNS:** add `A` records pointing at the server IP for `api.sendkoro.com`, `sendkoro.com` and `www.sendkoro.com`. Also `restaurants.sendkoro.com`, and later `admin.`.
+2. **DNS:** add `A` records pointing at the server IP for `api.sendkoro.com`, `sendkoro.com` and `www.sendkoro.com`. Also `restaurants.sendkoro.com` and `admin.sendkoro.com`.
 3. **Install Docker and create a deploy user:**
    ```bash
    curl -fsSL https://get.docker.com | sh

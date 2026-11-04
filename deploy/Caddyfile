@@ -41,3 +41,12 @@ www.{$CUSTOMER_DOMAIN} {
 	encode zstd gzip
 	reverse_proxy restaurant-web:3000
 }
+
+# Admin console. Optional extra lock: uncomment to allow only your office/VPN IPs.
+{$ADMIN_DOMAIN} {
+	encode zstd gzip
+	# @blocked not remote_ip 203.0.113.10/32
+	# respond @blocked 403
+	header X-Robots-Tag "noindex, nofollow"
+	reverse_proxy admin-web:3000
+}

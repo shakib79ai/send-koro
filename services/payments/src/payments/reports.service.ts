@@ -66,16 +66,23 @@ export class ReportsService {
     const [row] = kind === 'restaurant'
       ? await this.db.select({ acct: restaurants.stripeAccountId }).from(restaurants).where(eq(restaurants.id, id))
       : await this.db.select({ acct: drivers.stripeAccountId }).from(drivers).where(eq(drivers.id, id));
-    if (!row?.acct) return { stripeAccountId: null, balance: null, payouts: [] };
-    const [balance, payouts] = await Promise.all([
-      this.stripe.balance.retrieve({}, { stripeAccount: row.acct }),
-      this.stripe.payouts.list({ limit: 20 }, { stripeAccount: row.acct }),
-    ]);
+    if (!row?.acct) return { stripeAccountId: null, balance: null, payouts: [], error: null };
+    let balance: Stripe.Balance, payouts: Stripe.ApiList<Stripe.Payout>;
+    try {
+      [balance, payouts] = await Promise.all([
+        this.stripe.balance.retrieve({}, { stripeAccount: row.acct }),
+        this.stripe.payouts.list({ limit: 20 }, { stripeAccount: row.acct }),
+      ]);
+    } catch (e) {
+      // Read-only view: show the rest of the page and say why Stripe data is missing.
+      return { stripeAccountId: row.acct, balance: null, payouts: [], error: `Stripe didn’t respond: ${(e as Error).message}` };
+    }
     const sum = (l: { currency: string; amount: number }[]) => l.filter((b) => b.currency === 'usd').reduce((a, b) => a + b.amount, 0);
     return {
       stripeAccountId: row.acct,
       balance: { availableCents: sum(balance.available), pendingCents: sum(balance.pending ?? []) },
       payouts: payouts.data.map((p) => ({ id: p.id, amountCents: p.amount, status: p.status, arrivalDate: new Date(p.arrival_date * 1000), method: p.method, failureMessage: p.failure_message ?? null })),
+      error: null,
     };
   }
 

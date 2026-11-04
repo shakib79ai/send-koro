@@ -1,9 +1,9 @@
 'use client';
 import Link from 'next/link';
-import { use, useState } from 'react';
+import { use } from 'react';
 import { useData } from '@/lib/admin';
 import { Kpi, Money, PROVIDER, Status, when } from '@/components/bits';
-import { RangeKey, RangePicker, rangeQuery } from '@/components/Range';
+import { RangePicker, useRange } from '@/components/Range';
 
 interface MoneyView {
   restaurant: { id: string; name: string; stripeAccountId: string | null; onboardingStatus: string; cardPaymentsActive: boolean };
@@ -11,12 +11,12 @@ interface MoneyView {
   transactions: { orderId: string; status: string; createdAt: string; paidAt: string | null; paymentIntentId: string | null; totalCents: number; foodCents: number; taxCents: number; tipCents: number; deliveryCents: number; restaurantDeliveryCents: number; applicationFeeCents: number | null; deliveryFeeShareCents: number | null; stripeFeeCents: number | null; cardCountry: string | null; provider: string }[];
   refunds: { id: string; orderId: string; createdAt: string; chargeRefundCents: number; applicationFeeRefundCents: number; status: string }[];
 }
-interface PayoutsView { stripeAccountId: string | null; balance: { availableCents: number; pendingCents: number } | null; payouts: { id: string; amountCents: number; status: string; arrivalDate: string; failureMessage: string | null }[] }
+interface PayoutsView { error: string | null; stripeAccountId: string | null; balance: { availableCents: number; pendingCents: number } | null; payouts: { id: string; amountCents: number; status: string; arrivalDate: string; failureMessage: string | null }[] }
 
 export default function RestaurantMoney({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [range, setRange] = useState<RangeKey>('month');
-  const m = useData<MoneyView>(`/admin/money/restaurants/${id}?${rangeQuery(range)}`, [range]);
+  const { range, setRange, query } = useRange();
+  const m = useData<MoneyView>(`/admin/money/restaurants/${id}?${query}`);
   const p = useData<PayoutsView>(`/admin/money/restaurants/${id}/payouts`);
   const l = m.data?.ledger ?? {};
   const refunded = (l.refund_food ?? 0) + (l.refund_service ?? 0) + (l.refund_tax ?? 0);
@@ -36,7 +36,8 @@ export default function RestaurantMoney({ params }: { params: Promise<{ id: stri
       <div className="grid" style={{ gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', marginBottom: 16 }}>
         <div className="card pad stack" style={{ gap: 6 }}>
           <h3>Balance & payouts (from Stripe)</h3>
-          {p.data?.balance ? <><div className="row between small"><span>Available</span><b><Money c={p.data.balance.availableCents} /></b></div><div className="row between small"><span>Pending</span><Money c={p.data.balance.pendingCents} /></div></> : <p className="small muted">{p.data ? 'Stripe account not connected yet.' : 'Loading…'}</p>}
+          {p.data?.error && <div className="note small">{p.data.error}</div>}
+          {p.data?.balance ? <><div className="row between small"><span>Available</span><b><Money c={p.data.balance.availableCents} /></b></div><div className="row between small"><span>Pending</span><Money c={p.data.balance.pendingCents} /></div></> : <p className="small muted">{!p.data ? 'Loading…' : p.data.error ? '' : 'Stripe account not connected yet.'}</p>}
           {p.data?.payouts.map((x) => <div key={x.id} className="row between small"><span>{new Date(x.arrivalDate).toLocaleDateString()} <span className="muted">{x.id}</span></span><span><Money c={x.amountCents} /> <Status s={x.status} /></span></div>)}
         </div>
         <div className="card pad stack" style={{ gap: 6 }}>

@@ -49,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [customer-web, restaurant-web]
+        app: [customer-web, restaurant-web, admin-web]
     defaults:
       run:
         working-directory: apps/${{ matrix.app }}

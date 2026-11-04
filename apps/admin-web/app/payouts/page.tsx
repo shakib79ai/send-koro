@@ -1,16 +1,15 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
 import { useData } from '@/lib/admin';
 import { Kpi, Money, Status } from '@/components/bits';
-import { RangeKey, RangePicker, rangeQuery } from '@/components/Range';
+import { RangePicker, useRange } from '@/components/Range';
 
 interface R { id: string; name: string; status: string; payoutsReady: boolean }
 interface Overview { paidOrders: number; volumeCents: number; foodCents: number; taxCents: number; tipCents: number; applicationFeeCents: number; refunds: { count: number; chargeCents: number } }
 
 export default function Payouts() {
-  const [range, setRange] = useState<RangeKey>('month');
-  const ov = useData<Overview>(`/admin/money/overview?${rangeQuery(range)}`, [range]);
+  const { range, setRange, query } = useRange();
+  const ov = useData<Overview>(`/admin/money/overview?${query}`);
   const list = useData<R[]>('/admin/restaurants');
   const o = ov.data;
   return (
