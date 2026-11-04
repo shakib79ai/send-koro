@@ -1,0 +1,19 @@
+{
+  "name": "send-koro",
+  "private": true,
+  "description": "Send Koro — NYC food delivery marketplace (Stripe Connect, NestJS, Drizzle, Postgres)",
+  "scripts": {
+    "setup": "npm --prefix services/payments install",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "npm --prefix services/payments run db:migrate",
+    "dev": "npm --prefix services/payments run dev",
+    "test": "npm --prefix services/payments test",
+    "typecheck": "npm --prefix services/payments run typecheck",
+    "build": "npm --prefix services/payments run build",
+    "stripe:setup": "npm --prefix services/payments run stripe:setup -- --with-test-accounts",
+    "stripe:listen": "stripe listen --forward-to localhost:3000/webhooks/stripe --forward-connect-to localhost:3000/webhooks/stripe/connect",
+    "tiers:run": "npm --prefix services/payments run tiers:run"
+  },
+  "engines": { "node": ">=20" }
+}

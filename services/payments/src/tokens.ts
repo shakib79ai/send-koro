@@ -1,0 +1,12 @@
+export const TOKENS = {
+  env: Symbol('env'),
+  stripe: Symbol('stripe'),
+  db: Symbol('db'),
+  onboarding: Symbol('onboarding'),
+  checkout: Symbol('checkout'),
+  ledger: Symbol('ledger'),
+  refunds: Symbol('refunds'),
+  settlement: Symbol('settlement'),
+  subscriptions: Symbol('subscriptions'),
+  webhooks: Symbol('webhooks'),
+} as const;
