@@ -73,7 +73,8 @@ export class CheckoutService {
       tipCents: a.T, deliveryCents: a.D, customerDeliveryCents: a.C, restaurantDeliveryCents: a.R,
       totalCents: a.Q, applicationFeeCents: a.A, estDeliveryFeeShareCents: estShare, expiresAt,
     }).returning();
-    return { quoteId: q.id, expiresAt, allocation: a, estDeliveryFeeShareCents: estShare, customer: customerBreakdown(a, r.name) };
+    // stripeAccount lets the app initialise Stripe.js for this restaurant before the order exists (deferred intent).
+    return { quoteId: q.id, expiresAt, allocation: a, estDeliveryFeeShareCents: estShare, customer: customerBreakdown(a, r.name), stripeAccount: r.stripeAccountId };
   }
 
   async createPayment(quoteId: string) {

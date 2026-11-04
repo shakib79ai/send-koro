@@ -3,8 +3,9 @@
 One VPS runs everything with Docker: Postgres, the core API, the payments service, nightly backups, and Caddy for automatic HTTPS. GitHub Actions tests every push, builds images, and deploys `main`.
 
 ```
-Internet ──► Caddy (443, auto-HTTPS) ──┬─► api:3001        apps, Uber Direct / DoorDash webhooks, live updates
-                                       └─► payments:3000   only /webhooks/stripe*  (internal API never public)
+Internet ──► Caddy (443, auto-HTTPS) ──┬─► customer-web:3000   sendkoro.com (customer web + PWA)
+                                       ├─► api:3001        api.sendkoro.com: apps, Uber Direct / DoorDash webhooks, live updates
+                                       └─► payments:3000   api.sendkoro.com/webhooks/stripe* only (internal API never public)
                          api ──(internal key)──► payments ──► Stripe (direct charges on restaurant accounts)
                          api, payments ──► Postgres 16 (sendkoro_api, sendkoro_payments)
 ```
@@ -12,7 +13,7 @@ Internet ──► Caddy (443, auto-HTTPS) ──┬─► api:3001        apps,
 ## 1. Server (once, about 30 minutes)
 
 1. **Create a VPS:** Ubuntu 24.04, 2 vCPU and 4 GB RAM, in a US East region (DigitalOcean, Hetzner Ashburn, AWS Lightsail and similar all work).
-2. **DNS:** add an `A` record `api.sendkoro.com → <server IP>`.
+2. **DNS:** add `A` records pointing at the server IP for `api.sendkoro.com`, `sendkoro.com` and `www.sendkoro.com`. Later phases add `restaurants.` and `admin.`.
 3. **Install Docker and create a deploy user:**
    ```bash
    curl -fsSL https://get.docker.com | sh
@@ -43,6 +44,14 @@ In the repository, go to **Settings → Secrets and variables → Actions** and 
 | `DEPLOY_HOST` | server IP or hostname |
 | `DEPLOY_USER` | `deploy` |
 | `DEPLOY_SSH_KEY` | a private key whose public key is in `/home/deploy/.ssh/authorized_keys` |
+
+Under the **Variables** tab (not secrets — these are public values baked into the web apps), add:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | `https://api.sendkoro.com/v1` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` now, `pk_live_…` at launch |
+| `NEXT_PUBLIC_RESTAURANT_URL` | `https://restaurants.sendkoro.com` |
 
 Then create an environment named **production** under Settings → Environments. Add yourself as a required reviewer if you want to approve each deploy.
 

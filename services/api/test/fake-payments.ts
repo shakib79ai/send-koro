@@ -52,7 +52,7 @@ export function createFakePayments() {
       const allocation = { F: req.foodCents, S: req.serviceChargeCents, X: req.taxCents, D, R, C, T, Q: req.foodCents + req.serviceChargeCents + req.taxCents + C + T, A: D + T };
       const quoteId = randomUUID();
       quotes.set(quoteId, { req, allocation });
-      return { quoteId, expiresAt: new Date(Date.now() + 600_000).toISOString(), allocation };
+      return { quoteId, expiresAt: new Date(Date.now() + 600_000).toISOString(), allocation, stripeAccount: 'acct_rest' };
     },
     async createPayment(quoteId) {
       rec('createPayment', quoteId);

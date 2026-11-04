@@ -22,7 +22,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [api, payments]
+        include:
+          - { service: api, context: services/api }
+          - { service: payments, context: services/payments }
+          - { service: customer-web, context: apps/customer-web }
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,8 +38,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v6
         with:
-          context: services/${{ matrix.service }}
+          context: ${{ matrix.context }}
           push: true
+          # Public, non-secret values for the web apps (Settings → Secrets and variables → Actions → Variables).
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ vars.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_RESTAURANT_URL=${{ vars.NEXT_PUBLIC_RESTAURANT_URL }}
           tags: |
             ghcr.io/${{ github.repository }}/${{ matrix.service }}:latest
             ghcr.io/${{ github.repository }}/${{ matrix.service }}:${{ github.event.workflow_run.head_sha || github.sha }}
@@ -62,7 +70,7 @@ jobs:
             git fetch --quiet origin main && git checkout --quiet "$TAG" -- deploy
             cd deploy
             sed -i "s/^TAG=.*/TAG=$TAG/" .env
-            docker compose -f docker-compose.prod.yml --env-file .env pull api payments
+            docker compose -f docker-compose.prod.yml --env-file .env pull
             docker compose -f docker-compose.prod.yml --env-file .env up -d
             docker image prune -f
             sleep 10

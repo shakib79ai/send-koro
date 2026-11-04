@@ -9,6 +9,7 @@ import { isOpenAt } from '../src/core/hours';
 import { stateLaunchCheck, suggestTaxRatePpm } from '../src/core/tax';
 import { doordashJwt } from '../src/dispatch/providers/doordash-drive';
 import { createHmac } from 'node:crypto';
+import { parseCensus } from '../src/geocode/geocode';
 
 const MI = 1609.344;
 
@@ -124,6 +125,11 @@ describe('hours', () => {
     expect(isOpenAt(hours, tz, new Date('2026-11-04T04:00:00Z'))).toBe(false); // Tue 23:00
     expect(isOpenAt(hours, tz, new Date('2026-11-07T06:30:00Z'))).toBe(true); // Sat 01:30 (Fri night)
   });
+  it('23:59 closes at midnight with no gap; open == close is 24 hours', () => {
+    const tue2359 = new Date('2026-11-04T04:59:30Z'); // Tue 23:59:30 EST
+    expect(isOpenAt([{ dayOfWeek: 2, opensAt: '10:00', closesAt: '23:59' }], tz, tue2359)).toBe(true);
+    expect(isOpenAt([{ dayOfWeek: 2, opensAt: '00:00', closesAt: '00:00' }], tz, tue2359)).toBe(true);
+  });
 });
 
 describe('tax policy', () => {
@@ -143,5 +149,14 @@ describe('DoorDash Drive JWT', () => {
     expect(JSON.parse(Buffer.from(h, 'base64url').toString())).toEqual({ alg: 'HS256', typ: 'JWT', 'dd-ver': 'DD-JWT-V1' });
     expect(JSON.parse(Buffer.from(p, 'base64url').toString())).toMatchObject({ aud: 'doordash', iss: 'dev', kid: 'key', exp: 1_700_000_300 });
     expect(s).toBe(createHmac('sha256', Buffer.from('test-signing-secret')).update(`${h}.${p}`).digest('base64url'));
+  });
+});
+
+describe('geocoder', () => {
+  it('turns a Census match into an address with coordinates', () => {
+    const r = parseCensus({ result: { addressMatches: [{ matchedAddress: '350 5TH AVE, NEW YORK, NY, 10118', coordinates: { x: -73.9857, y: 40.7484 },
+      addressComponents: { fromAddress: '350', streetName: '5TH', suffixType: 'AVE', city: 'NEW YORK', state: 'NY', zip: '10118' } }] } });
+    expect(r).toEqual([{ line1: '350 5th Ave', city: 'New York', state: 'NY', postalCode: '10118', lat: 40.7484, lng: -73.9857, matched: '350 5TH AVE, NEW YORK, NY, 10118' }]);
+    expect(parseCensus({})).toEqual([]);
   });
 });

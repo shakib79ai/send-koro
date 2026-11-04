@@ -24,7 +24,8 @@ export class CustomerOrdersController {
   @Post('preview') async preview(@CurrentUser() u: AuthUser, @Body() b: unknown) {
     return run(async () => {
       const p = await this.orders.preview(u, parse(Checkout, b));
-      return { receipt: p.receipt, items: p.cart.lines, etaMinutes: p.etaMinutes, restaurant: p.restaurant, taxNote: p.receipt.taxNote };
+      // stripeAccount: initialise Stripe.js with it (direct charge on the restaurant's account) before placing.
+      return { receipt: p.receipt, items: p.cart.lines, etaMinutes: p.etaMinutes, restaurant: p.restaurant, taxNote: p.receipt.taxNote, stripeAccount: p.quote.stripeAccount ?? null };
     });
   }
   @Post() place(@CurrentUser() u: AuthUser, @Body() b: unknown) { return run(() => this.orders.place(u, parse(Place, b))); }

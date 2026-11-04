@@ -26,3 +26,12 @@
 		-Server
 	}
 }
+
+# Customer web + PWA (www redirects to the bare domain)
+{$CUSTOMER_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy customer-web:3000
+}
+www.{$CUSTOMER_DOMAIN} {
+	redir https://{$CUSTOMER_DOMAIN}{uri} permanent
+}

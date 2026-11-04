@@ -14,7 +14,7 @@ export interface PaymentsQuoteRequest {
   taxBreakdown?: { label: string; rateBps: number; amountCents: number }[];
   delivery: { provider: 'pickup' } | { provider: 'uber_direct' | 'doordash_drive' | 'own_driver'; providerQuoteId?: string; deliveryCents: number; expiresAt: string };
 }
-export interface PaymentsQuote { quoteId: string; expiresAt: string; allocation: PaymentsAllocation & Record<string, number> }
+export interface PaymentsQuote { quoteId: string; expiresAt: string; allocation: PaymentsAllocation & Record<string, number>; stripeAccount?: string | null }
 export interface PaymentsPayment { orderId: string; paymentIntentId: string; clientSecret: string; stripeAccount: string; totalCents: number }
 
 export interface PaymentsClient {

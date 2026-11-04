@@ -159,8 +159,9 @@ export class OrdersService {
   }
 
   async customerOrders(customer: AuthUser) {
-    const rows = await this.db.select().from(orders).where(and(eq(orders.customerId, customer.id), inArray(orders.status, ['placed', 'accepted', 'preparing', 'ready', 'picked_up', 'delivered', 'completed', 'declined', 'cancelled']))).orderBy(desc(orders.createdAt)).limit(100);
-    return rows.map((o) => this.customerView(o));
+    const rows = await this.db.select({ o: orders, name: restaurants.name }).from(orders).innerJoin(restaurants, eq(restaurants.id, orders.restaurantId))
+      .where(and(eq(orders.customerId, customer.id), inArray(orders.status, ['placed', 'accepted', 'preparing', 'ready', 'picked_up', 'delivered', 'completed', 'declined', 'cancelled']))).orderBy(desc(orders.createdAt)).limit(100);
+    return rows.map(({ o, name }) => ({ ...this.customerView(o), restaurantName: name }));
   }
 
   async customerOrder(customer: AuthUser, orderId: string) {
@@ -171,8 +172,9 @@ export class OrdersService {
       const [drv] = await this.db.select().from(drivers).where(eq(drivers.id, d.driverId));
       if (drv) courier = { firstName: drv.name.split(' ')[0], lat: drv.lat, lng: drv.lng };
     }
+    const [r] = await this.db.select({ name: restaurants.name }).from(restaurants).where(eq(restaurants.id, o.restaurantId));
     // Third-party tracking links carry the courier company's branding, so they are not shown (rule 4).
-    return { ...this.customerView(o), delivery: d ? { status: d.status, courier } : null };
+    return { ...this.customerView(o), restaurantName: r?.name ?? '', delivery: d ? { status: d.status, courier } : null };
   }
 
   private async ownOrder(customer: AuthUser, orderId: string) {

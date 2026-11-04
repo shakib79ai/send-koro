@@ -1,4 +1,7 @@
-/** Opening hours in the location's own time zone. A close time earlier than the open time runs past midnight. */
+/**
+ * Opening hours in the location's own time zone. A close time earlier than the open time runs past
+ * midnight. 23:59 means "until midnight" (inclusive), and open == close means open all day.
+ */
 export interface HoursRow { dayOfWeek: number; opensAt: string; closesAt: string }
 
 function localParts(at: Date, timeZone: string) {
@@ -13,7 +16,9 @@ export function isOpenAt(hours: HoursRow[], timeZone: string, at: Date): boolean
   const { day, minutes } = localParts(at, timeZone);
   const yesterday = (day + 6) % 7;
   return hours.some((h) => {
-    const o = toMin(h.opensAt), c = toMin(h.closesAt);
+    const o = toMin(h.opensAt);
+    const c = h.closesAt.startsWith('23:59') ? 1440 : toMin(h.closesAt);
+    if (c === o) return h.dayOfWeek === day; // 24 hours
     if (c > o) return h.dayOfWeek === day && minutes >= o && minutes < c;
     // overnight: open from o today until c tomorrow
     return (h.dayOfWeek === day && minutes >= o) || (h.dayOfWeek === yesterday && minutes < c);

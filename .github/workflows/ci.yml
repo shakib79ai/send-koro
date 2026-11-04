@@ -42,3 +42,28 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  web:
+    name: ${{ matrix.app }} — typecheck & build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [customer-web]
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.app }}
+    env:
+      NEXT_PUBLIC_API_URL: https://api.sendkoro.com/v1
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build

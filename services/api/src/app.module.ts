@@ -34,6 +34,7 @@ import { AdminService } from './admin/admin.service';
 import { AdminController } from './admin/admin.controller';
 import { ApiJobs } from './jobs/api.jobs';
 import { HealthController } from './health.controller';
+import { GeocodeController } from './geocode/geocode.controller';
 import type { DeliveryProviderAdapter, ThirdPartyProvider } from './dispatch/providers/types';
 
 type Providers = Partial<Record<ThirdPartyProvider, DeliveryProviderAdapter>>;
@@ -45,7 +46,7 @@ type Providers = Partial<Record<ThirdPartyProvider, DeliveryProviderAdapter>>;
 @Module({
   imports: [ScheduleModule.forRoot()],
   controllers: [
-    HealthController, AuthController, CustomersController, RestaurantsController, MenuController, CatalogController,
+    HealthController, GeocodeController, AuthController, CustomersController, RestaurantsController, MenuController, CatalogController,
     CustomerOrdersController, RestaurantOrdersController, DriversController, AdminController, ProviderWebhooksController, RealtimeController,
   ],
   providers: [

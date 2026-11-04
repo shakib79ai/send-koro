@@ -44,6 +44,11 @@ services:
       db: { condition: service_healthy }
       payments: { condition: service_healthy }
 
+  customer-web:
+    image: ${REGISTRY:-ghcr.io/shakib79ai/send-koro}/customer-web:${TAG:-latest}
+    restart: unless-stopped
+    depends_on: [api]
+
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -53,12 +58,13 @@ services:
       - "443:443/udp"
     environment:
       API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in deploy/.env}
+      CUSTOMER_DOMAIN: ${CUSTOMER_DOMAIN:?set CUSTOMER_DOMAIN in deploy/.env}
       ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in deploy/.env}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-    depends_on: [api, payments]
+    depends_on: [api, payments, customer-web]
 
   backup:
     # Nightly pg_dump of both databases, kept 14 days. Copy ./backups off the server too.
