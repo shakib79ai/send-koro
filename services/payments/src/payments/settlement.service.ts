@@ -11,7 +11,7 @@
 import type Stripe from 'stripe';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { drivers, driverTransfers, fulfillments, orders, quotes, supplierObligations } from '../db/schema';
+import { drivers, driverTopUps, driverTransfers, fulfillments, orders, quotes, supplierObligations } from '../db/schema';
 import { LedgerService } from './ledger.service';
 
 export class SettlementService {
@@ -81,7 +81,54 @@ export class SettlementService {
     const owed = await this.db.select().from(driverTransfers).where(inArray(driverTransfers.status, ['owed', 'failed']));
     const results = [];
     for (const t of owed) results.push(await this.payDriverTransfer(t.id).catch((e) => ({ id: t.id, error: (e as Error).message })));
+    const owedTopUps = await this.db.select().from(driverTopUps).where(inArray(driverTopUps.status, ['owed', 'failed']));
+    for (const t of owedTopUps) results.push(await this.payTopUp(t.id).catch((e) => ({ id: t.id, error: (e as Error).message })));
     return results;
+  }
+
+  /**
+   * NYC minimum pay: $22.13 per hour of trip time (standard method). Tips never count toward it.
+   *   Week: 5 h 00 m of trips (18 000 s), $98.00 locked pay → minimum ceil(18000 × 2213 / 3600) = 11065
+   *   → top-up 11065 − 9800 = 1265, transferred once (unique driver+week, Stripe idempotency key).
+   * The core API reports trip seconds and locked pay for the week; nothing is ever deducted.
+   */
+  async weeklyTopUp(driverId: string, weekStart: string, tripSeconds: number, paidCents: number, centsPerHour = 2213) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) throw new Error('weekStart must be YYYY-MM-DD');
+    const minimumCents = Math.ceil((tripSeconds * centsPerHour) / 3600);
+    const amountCents = Math.max(0, minimumCents - paidCents);
+    const [row] = await this.db.insert(driverTopUps).values({
+      driverId, weekStart, tripSeconds, minimumCents, paidCents, amountCents,
+      idempotencyKey: `driver-topup:${driverId}:${weekStart}`, status: amountCents === 0 ? 'paid' : 'pending',
+    }).onConflictDoNothing({ target: [driverTopUps.driverId, driverTopUps.weekStart] }).returning();
+    const t = row ?? (await this.db.select().from(driverTopUps).where(and(eq(driverTopUps.driverId, driverId), eq(driverTopUps.weekStart, weekStart))))[0];
+    return t.status === 'paid' || t.status === 'on_hold' ? t : this.payTopUp(t.id);
+  }
+
+  async payTopUp(topUpId: string) {
+    const [t] = await this.db.select().from(driverTopUps).where(eq(driverTopUps.id, topUpId));
+    if (!t || t.status === 'paid' || t.amountCents === 0) return t;
+    const [d] = await this.db.select().from(drivers).where(eq(drivers.id, t.driverId));
+    const owe = async (lastError: string) => {
+      await this.db.update(driverTopUps).set({ status: 'owed', lastError }).where(eq(driverTopUps.id, t.id));
+      return { ...t, status: 'owed' as const, lastError };
+    };
+    if (!d?.stripeAccountId || !d.transfersActive) return owe('driver payouts not active');
+    const bal = await this.stripe.balance.retrieve();
+    const available = bal.available.filter((b) => b.currency === 'usd').reduce((s, b) => s + b.amount, 0);
+    if (available < t.amountCents) return owe(`platform available balance ${available}¢ < ${t.amountCents}¢`);
+    try {
+      const tr = await this.stripe.transfers.create(
+        { amount: t.amountCents, currency: 'usd', destination: d.stripeAccountId, transfer_group: `topup_${t.driverId}_${t.weekStart}`,
+          description: `NYC minimum pay top-up · week of ${t.weekStart}`,
+          metadata: { send_koro_driver_id: t.driverId, week_start: t.weekStart, minimum_cents: String(t.minimumCents), paid_cents: String(t.paidCents) } },
+        { idempotencyKey: t.idempotencyKey },
+      );
+      await this.db.update(driverTopUps).set({ status: 'paid', stripeTransferId: tr.id, lastError: null }).where(eq(driverTopUps.id, t.id));
+      return { ...t, status: 'paid' as const, stripeTransferId: tr.id };
+    } catch (e) {
+      await this.db.update(driverTopUps).set({ status: 'failed', lastError: (e as Error).message }).where(eq(driverTopUps.id, t.id));
+      throw e;
+    }
   }
 
   /** Disputes: delivery funds are not guaranteed while a dispute is open (brief §"Disputes and tax"). */

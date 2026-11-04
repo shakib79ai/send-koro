@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AllocationError } from '../core/allocation';
 import { RefundError } from '../core/refunds';
@@ -9,6 +9,7 @@ import { OnboardingService } from './onboarding.service';
 import { RefundsService } from './refunds.service';
 import { SettlementService } from './settlement.service';
 import { SubscriptionsService } from './subscriptions.service';
+import { RegistryService } from './registry.service';
 
 const cents = z.number().int().nonnegative();
 const QuoteBody = z.object({
@@ -28,6 +29,20 @@ const RefundBody = z.object({
   foodCents: cents.default(0), serviceChargeCents: cents.default(0), taxCents: cents.default(0),
   customerDeliveryCents: cents.default(0), restoreSubsidyCents: cents.default(0), tipCents: cents.default(0),
   reason: z.string().min(3),
+});
+
+const PartyBody = z.object({ id: z.string().uuid(), name: z.string().min(1), contactEmail: z.string().email() });
+const ConsentBody = z.object({
+  rule: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('customer_pays') }),
+    z.object({ kind: z.literal('restaurant_pays') }),
+    z.object({ kind: z.literal('split_fixed'), restaurantCents: cents }),
+    z.object({ kind: z.literal('split_percent'), restaurantBps: z.number().int().min(0).max(10000) }),
+    z.object({ kind: z.literal('free_above'), minFoodCents: cents, belowRestaurantCents: cents.optional() }),
+  ]),
+  perOrderCapCents: cents.nullable().optional(),
+  monthlyBudgetCents: cents.nullable().optional(),
+  acceptedBy: z.string().min(1),
 });
 
 function parse<S extends z.ZodTypeAny>(schema: S, body: unknown): z.output<S> {
@@ -52,12 +67,26 @@ export class PaymentsController {
     @Inject(TOKENS.refunds) private readonly refunds: RefundsService,
     @Inject(TOKENS.settlement) private readonly settlement: SettlementService,
     @Inject(TOKENS.subscriptions) private readonly subs: SubscriptionsService,
+    @Inject(TOKENS.registry) private readonly registry: RegistryService,
   ) {}
+
+  // ── Registry (called by services/api) ──
+  @Post('registry/restaurants') upsertRestaurant(@Body() b: unknown) { return this.registry.upsertRestaurant(parse(PartyBody, b)); }
+  @Post('registry/drivers') upsertDriver(@Body() b: unknown) { return this.registry.upsertDriver(parse(PartyBody, b)); }
+  @Get('restaurants/:id/status') rStatus(@Param('id') id: string) { return this.registry.restaurantStatus(id); }
+  @Get('drivers/:id/status') dStatus(@Param('id') id: string) { return this.registry.driverStatus(id); }
+  @Post('restaurants/:id/tax-responsibility') acceptTax(@Param('id') id: string) { return this.registry.acceptTaxResponsibility(id); }
+  @Post('restaurants/:id/delivery-consents') consent(@Param('id') id: string, @Body() b: unknown) {
+    return domain(() => this.registry.setDeliveryConsent(id, parse(ConsentBody, b)));
+  }
+  @Post('restaurants/:id/stripe/account') async rAccount(@Param('id') id: string) { return { accountId: await this.onboarding.createRestaurantAccount(id) }; }
+  @Post('drivers/:id/stripe/account') async dAccount(@Param('id') id: string) { return { accountId: await this.onboarding.createDriverAccount(id) }; }
 
   @Post('checkout/quotes') quote(@Body() body: unknown) { return domain(() => this.checkout.quote(parse(QuoteBody, body))); }
   @Post('checkout/quotes/:id/payment') pay(@Param('id') id: string) { return domain(() => this.checkout.createPayment(id)); }
+  @Get('orders/:id/payment-status') status(@Param('id') id: string) { return this.checkout.paymentStatus(id); }
   @Post('orders/:id/accept') accept(@Param('id') id: string) { return this.checkout.accept(id); }
-  @Post('orders/:id/decline') decline(@Param('id') id: string, @Body() b: { reason?: 'restaurant_declined' | 'auto_declined' }) { return this.checkout.decline(id, b?.reason ?? 'restaurant_declined'); }
+  @Post('orders/:id/decline') decline(@Param('id') id: string, @Body() b: { reason?: 'restaurant_declined' | 'auto_declined' | 'customer_cancelled' }) { return this.checkout.decline(id, b?.reason ?? 'restaurant_declined'); }
   @Post('orders/:id/refunds') refund(@Param('id') id: string, @Body() body: unknown) {
     const { requestId, ...req } = parse(RefundBody, body);
     return domain(() => this.refunds.refund(id, req, requestId));
@@ -75,6 +104,10 @@ export class PaymentsController {
   }
   @Post('fulfilment/:orderId/supplier-assigned') assigned(@Param('orderId') orderId: string, @Body() b: { provider: 'uber_direct' | 'doordash_drive'; providerDeliveryId: string }) {
     return this.settlement.supplierAssigned(orderId, b.provider, b.providerDeliveryId);
+  }
+  @Post('drivers/:id/nyc-top-ups') topUp(@Param('id') id: string, @Body() b: unknown) {
+    const x = parse(z.object({ weekStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), tripSeconds: z.number().int().nonnegative(), paidCents: cents }), b);
+    return this.settlement.weeklyTopUp(id, x.weekStart, x.tripSeconds, x.paidCents);
   }
   @Post('fulfilment/:orderId/supplier-tip-submitted') tip(@Param('orderId') orderId: string) { return this.settlement.markTipSubmitted(orderId); }
 }

@@ -9,4 +9,5 @@ export const TOKENS = {
   settlement: Symbol('settlement'),
   subscriptions: Symbol('subscriptions'),
   webhooks: Symbol('webhooks'),
+  registry: Symbol('registry'),
 } as const;

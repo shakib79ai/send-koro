@@ -6,15 +6,21 @@ Read before changing anything money-related:
 - `docs/BUSINESS_MODEL.md` — every business decision to date. **It overrides the brief where they differ.**
 - `docs/STRIPE_TECHNICAL_BRIEF.md` — the Stripe developer brief (v1.2) the payments service implements.
 - `docs/DESIGNS.md` — links to the approved screen designs for every app.
+- `docs/API.md` — the core API the apps call. `docs/DEPLOYMENT.md` — server, CI/CD, going live.
 
 ## Repository
 
 ```
-services/payments/   NestJS 11 + Drizzle + Postgres payments service (Stripe Connect). Has its own CLAUDE.md.
-docs/                business model, Stripe brief, Dashboard checklist, design links
+services/api/        Core API (NestJS 11 + Drizzle): sign-in, restaurants, menus, orders, dispatch, drivers, admin. Has its own CLAUDE.md.
+services/payments/   Payments service (Stripe Connect). Only this service talks to Stripe. Has its own CLAUDE.md.
+deploy/              Production Docker Compose, Caddy (auto-HTTPS), env templates
+.github/workflows/   CI (typecheck + tests for both services) and Deploy (GHCR images → VPS over SSH)
+docs/                business model, Stripe brief, Dashboard checklist, design links, API reference, deployment
 docker/              local Postgres init
 .claude/commands/    project slash commands (/test, /stripe-setup, /new-migration, /check-business-rules, /tier-job)
 ```
+
+Apps call `services/api` (`/v1`). The API calls `services/payments` over an internal, key-protected API; payments is never exposed publicly except Stripe's webhook paths.
 
 Stack: TypeScript, NestJS, Drizzle ORM, PostgreSQL, Next.js (for future web apps), Stripe (`stripe@22.6.2`, API `2026-08-26.dahlia`).
 
@@ -25,8 +31,9 @@ Stack: TypeScript, NestJS, Drizzle ORM, PostgreSQL, Next.js (for future web apps
 | Install | `npm run setup` |
 | Start Postgres (Docker) | `npm run db:up` |
 | Migrate | `npm run db:migrate` |
-| Run the service | `npm run dev` |
-| Tests (needs `db:up`) | `npm test` |
+| Run payments (:3000) / core API (:3001) | `npm run dev` / `npm run dev:api` |
+| Tests, both services (needs `db:up`) | `npm test` (`npm run test:api`, `npm run test:payments`) |
+| First admin / demo restaurant | `npm run seed:admin -- +1917… "Name"` / `npm run seed:demo` |
 | Typecheck | `npm run typecheck` |
 | Stripe sandbox setup | `npm run stripe:setup` |
 | Forward Stripe webhooks locally | `npm run stripe:listen` |

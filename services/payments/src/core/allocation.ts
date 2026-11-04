@@ -25,7 +25,8 @@ export type AllocationErrorCode =
   | 'invariant_broken'
   | 'insufficient_restaurant_proceeds'
   | 'quote_expired'
-  | 'rule_not_authorized';
+  | 'rule_not_authorized'
+  | 'invalid_rule';
 
 /** Delivery rules a restaurant can authorize (mirrors the restaurant portal "Delivery fee" page). */
 export type DeliveryRule =

@@ -199,3 +199,23 @@ export const tierSnapshots = pgTable('tier_snapshots', {
   invoiceId: text('invoice_id'),
   createdAt: created(),
 }, (t) => [uniqueIndex('tier_snapshots_subject_period').on(t.subjectType, t.subjectId, t.period)]);
+
+/**
+ * NYC minimum pay weekly top-up (BUSINESS_MODEL.md §Own drivers): when a week's locked pay is
+ * below $22.13 × trip hours, the shortfall is transferred once per driver per week. Tips never count.
+ */
+export const driverTopUps = pgTable('driver_top_ups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  driverId: uuid('driver_id').notNull().references(() => drivers.id),
+  /** Monday of the pay week (New York date, YYYY-MM-DD). */
+  weekStart: text('week_start').notNull(),
+  tripSeconds: integer('trip_seconds').notNull(),
+  minimumCents: cents('minimum_cents'),
+  paidCents: cents('paid_cents'),
+  amountCents: cents('amount_cents'),
+  idempotencyKey: text('idempotency_key').notNull().unique(),
+  stripeTransferId: text('stripe_transfer_id'),
+  status: settlementStatus('status').notNull().default('pending'),
+  lastError: text('last_error'),
+  createdAt: created(),
+}, (t) => [uniqueIndex('driver_top_ups_driver_week').on(t.driverId, t.weekStart)]);

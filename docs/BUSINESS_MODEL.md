@@ -76,7 +76,7 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 - **Rate card:** $2.50 pickup + $0.45 per minute + $0.75 per mile. Example: 2.0 mi and 18 min = **$12.10**.
 - **Two orders on one route** (batching) like Uber and DoorDash. Example: 2.8 mi and 24 min = **$15.40** for both. Each order is still paid fairly.
 - **Upfront, locked pay:** before accepting, the driver sees distance, total time and pay. Pay **never goes down** for traffic or delays.
-- **NYC minimum pay:** $22.13 per hour of trip time (standard method; $36.88 under the alternative method). If actual trip time pushes pay below that, the shortfall is added to the weekly payout automatically. Locked pay cannot remove this legal check.
+- **NYC minimum pay:** $22.13 per hour of trip time (standard method; $36.88 under the alternative method). If actual trip time pushes pay below that, the shortfall is added to the weekly payout automatically. Locked pay cannot remove this legal check. Built: every Monday 06:00 ET the API totals last week's trips and the payments service transfers any shortfall once per driver per week.
 - **Tips:** 100% to the driver, never used to meet the minimum, never reduced.
 - **Payouts:** weekly on Mondays to the driver's own Stripe account. Instant payouts are off at launch.
 

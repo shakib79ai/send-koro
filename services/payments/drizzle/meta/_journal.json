@@ -15,6 +15,13 @@
       "when": 1793763231667,
       "tag": "0001_delivery_fee_share",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793766795480,
+      "tag": "0002_nyc_min_pay_top_ups",
+      "breakpoints": true
     }
   ]
 }

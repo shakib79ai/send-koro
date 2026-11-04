@@ -8,7 +8,11 @@ This repository is set up for **VS Code + Claude Code**. Claude Code reads `CLAU
 
 | Path | What it is |
 |---|---|
-| `services/payments/` | Payments service: NestJS 11, Drizzle, Postgres, Stripe Connect (direct charges, delivery allocation, driver payouts, restaurant plans). 56 tests. |
+| `services/api/` | **Core API** the apps call: phone sign-in, restaurants, menus, ordering, dispatch (Uber Direct, DoorDash Drive, own drivers with locked offers and batching), driver app, admin. 32 tests. Reference: `docs/API.md`. |
+| `services/payments/` | Payments service: NestJS 11, Drizzle, Postgres, Stripe Connect (direct charges, delivery allocation, driver payouts, NYC minimum-pay top-ups, restaurant plans). 60 tests. |
+| `deploy/` | Production Docker Compose for one server: Postgres, both services, Caddy (automatic HTTPS), nightly backups. |
+| `.github/workflows/` | CI (typecheck, tests and build for both services) and Deploy (images to GitHub Container Registry, then the server over SSH). |
+| `docs/DEPLOYMENT.md` | Step-by-step: server, GitHub secrets, first deploy, Stripe webhooks, couriers, going live. |
 | `docs/BUSINESS_MODEL.md` | Every business decision so far: pricing, fees, tax policy, delivery rules, driver pay. |
 | `docs/STRIPE_TECHNICAL_BRIEF.md` | The Stripe developer brief (v1.2). |
 | `docs/STRIPE_DASHBOARD_CHECKLIST.md` | Stripe settings only a person can make in the Dashboard. |
@@ -27,15 +31,17 @@ You need **Node 22**, **Docker Desktop**, **VS Code**, the **Stripe CLI** (`npm 
 1. **Unzip the project and open the folder in VS Code.** Install the recommended extensions when prompted: Claude Code, Stripe, Vitest, Docker, Prettier.
 2. **In the VS Code terminal:**
    ```bash
-   npm run setup          # installs the payments service
-   npm run db:up          # starts Postgres in Docker
+   npm run setup          # installs both services
+   npm run db:up          # starts Postgres in Docker (creates the dev and test databases)
    cp services/payments/.env.example services/payments/.env
+   cp services/api/.env.example services/api/.env
    ```
+   If you ran `db:up` before this version, recreate the database once so the new databases exist: `docker compose down -v && npm run db:up`.
 3. **Edit `services/payments/.env` yourself.** Paste your Stripe **sandbox** keys (`sk_test_…`, `pk_test_…`) from Dashboard → Developers → API keys. Never paste keys into Claude.
 4. **Run the migrations and tests:**
    ```bash
    npm run db:migrate
-   npm test               # should show 56 passed
+   npm test               # payments 60 passed, then api 32 passed
    ```
 5. **Connect Stripe tooling:**
    ```bash
@@ -51,10 +57,19 @@ You need **Node 22**, **Docker Desktop**, **VS Code**, the **Stripe CLI** (`npm 
 
 ```bash
 npm run dev            # payments service on http://localhost:3000
-npm run stripe:listen  # forward Stripe webhooks to your local service
+npm run dev:api        # core API on http://localhost:3001/v1 (sign-in codes print in this log)
+npm run seed:admin -- +19175550123 "Your Name"   # first admin
+npm run seed:demo      # demo restaurant "Dhaka Kitchen" with a menu (payments must be running)
+npm run stripe:listen  # forward Stripe webhooks to your local payments service
 npm test               # all tests (Postgres must be running)
 npm run typecheck
 ```
+
+Couriers default to **mock** mode, so the whole order flow works locally without Uber or DoorDash accounts.
+
+## Deploying
+
+See **`docs/DEPLOYMENT.md`**. In short: one Ubuntu VPS with Docker, `deploy/docker-compose.prod.yml`, three env files, and GitHub Actions deploys every green push to `main`.
 
 In VS Code: **Run and Debug → "Payments: run & debug"**, or open a test file and use **"Payments: debug this test file"**. Tasks for the same commands are under **Terminal → Run Task**.
 
@@ -62,7 +77,7 @@ In VS Code: **Run and Debug → "Payments: run & debug"**, or open a test file a
 
 - "Read docs/BUSINESS_MODEL.md and summarise how a $39 order with free delivery is split between the restaurant, Send Koro and the driver."
 - "Add the delivery fee share to the delivery price at quote time, with tests." (This is the recommended open item.)
-- "Build the Uber Direct dispatch integration that calls `settlement.supplierAssigned` and submits the full tip through the tip field."
+- "Replace the distance estimate in services/api/src/core/geo.ts with the Google Routes API so offer pay matches real trips." 
 - "/check-business-rules" before every commit.
 
 ## Safety

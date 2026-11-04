@@ -29,6 +29,9 @@ beforeAll(async () => {
 afterAll(async () => { await app?.close(); });
 
 describe('HTTP', () => {
+  it('health check is public', async () => {
+    expect(await (await fetch(`${base}/health`)).json()).toEqual({ ok: true, service: 'send-koro-payments' });
+  });
   it('accepts a correctly signed connect webhook (raw body preserved) and dedupes the retry', async () => {
     const { payload, header } = signedEvent('whsec_http_connect', { id: 'evt_http_1', type: 'payout.paid', account: 'acct_x', data: { object: { id: 'po_1', object: 'payout' } } });
     const send = () => fetch(`${base}/webhooks/stripe/connect`, { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': header }, body: payload });

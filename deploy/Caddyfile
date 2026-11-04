@@ -1,0 +1,28 @@
+# Automatic HTTPS (Let's Encrypt). Point API_DOMAIN's DNS A record at this server first.
+{
+	email {$ACME_EMAIL}
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+
+	# Stripe webhooks → payments service (signature-checked there). Nothing else of payments is public.
+	handle /webhooks/stripe* {
+		reverse_proxy payments:3000
+	}
+
+	# Everything else → core API (apps, Uber Direct / DoorDash webhooks, live updates).
+	handle {
+		reverse_proxy api:3001 {
+			# Server-Sent Events: don't buffer.
+			flush_interval -1
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}

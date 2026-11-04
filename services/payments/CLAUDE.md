@@ -12,12 +12,17 @@ Implements `docs/STRIPE_TECHNICAL_BRIEF.md`, as amended by `docs/BUSINESS_MODEL.
 | `src/payments/checkout.service.ts` | Quote freeze → PaymentIntent on the restaurant account (manual capture) → accept/capture with final application fee. |
 | `src/payments/ledger.service.ts` | Per-order ledger, idempotent by `dedupe_key`; tier base query. |
 | `src/payments/refunds.service.ts` | Executes refund plans on Stripe; caps application-fee refunds at what was taken. |
-| `src/payments/settlement.service.ts` | Own-driver transfers (pay + full tip, once), owed/retry, dispute hold; third-party obligations and reconciliation. |
+| `src/payments/settlement.service.ts` | Own-driver transfers (pay + full tip, once), owed/retry, dispute hold; NYC minimum-pay weekly top-ups (once per driver per week); third-party obligations and reconciliation. |
 | `src/payments/subscriptions.service.ts` | Restaurant plan via `customer_account`, month-end tier job, renewal invoice safety net. |
+| `src/payments/registry.service.ts` | Mirror of the core API's restaurants and drivers; tax acceptance; versioned delivery-fee consents; payout readiness. |
 | `src/payments/onboarding.service.ts` | Accounts v2 for restaurants (merchant + customer) and drivers (recipient), hosted onboarding, capability sync. |
 | `src/webhooks/` | Platform, connect and Accounts v2 thin-event endpoints; signature check + dedupe. |
 | `src/db/schema.ts` | Drizzle schema. Migrations live in `drizzle/` and are generated, never hand-edited. |
 | `scripts/stripe-setup.ts` | Idempotent Stripe setup: products, prices, webhooks, event destination, portal, test accounts. |
+
+## Who calls this service
+
+Only `services/api`, through `x-internal-key`, using `services/api/src/integrations/payments.client.ts`. When you add or change an endpoint here, update that client and the API's `test/fake-payments.ts`.
 
 ## Working here
 
@@ -36,5 +41,5 @@ Implements `docs/STRIPE_TECHNICAL_BRIEF.md`, as amended by `docs/BUSINESS_MODEL.
 
 - Adding the delivery fee share to the delivery price at quote time. Today Send Koro absorbs about 33¢ per third-party order.
 - Crediting `fee_share_owed_to_restaurant` on the restaurant's next subscription invoice.
-- Dispatch integration with the Uber Direct and DoorDash Drive APIs. The fulfilment trigger in `app.module.ts` only logs today.
+- The fulfilment trigger in `app.module.ts` only logs. Dispatch lives in `services/api`, which starts it right after a successful capture.
 - Real service authentication. `InternalApiGuard` is a shared-key placeholder.

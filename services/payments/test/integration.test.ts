@@ -14,6 +14,7 @@ import { OnboardingService } from '../src/payments/onboarding.service';
 import { RefundsService } from '../src/payments/refunds.service';
 import { SettlementService } from '../src/payments/settlement.service';
 import { SubscriptionsService } from '../src/payments/subscriptions.service';
+import { RegistryService } from '../src/payments/registry.service';
 import { WebhooksService } from '../src/webhooks/webhooks.service';
 import { createFakeStripe, signedEvent } from './fake-stripe';
 
@@ -112,6 +113,16 @@ describe('checkout → direct charge', () => {
     await expect(svc.checkout.quote(deliveryQuote(r.id, { foodCents: 900 }))).rejects.toMatchObject({ code: 'insufficient_restaurant_proceeds' });
   });
 
+  it('payment status marks the order authorised once the card is held', async () => {
+    const fake = createFakeStripe(); const s = build(fake); await seed();
+    const [r] = await db.select().from(t.restaurants);
+    const q = await s.checkout.quote({ restaurantId: r.id, foodCents: 3000, tipCents: 400, delivery: { provider: 'uber_direct', deliveryCents: 780, expiresAt: new Date(Date.now() + 600_000) } });
+    const p = await s.checkout.createPayment(q.quoteId);
+    const st = await s.checkout.paymentStatus(p.orderId);
+    expect(st).toMatchObject({ authorized: true, paymentIntentStatus: 'requires_capture' });
+    const [o] = await db.select().from(t.orders).where(eq(t.orders.id, p.orderId));
+    expect(o.status).toBe('authorized');
+  });
   it('declined order releases the authorisation instead of charging', async () => {
     const fake = createFakeStripe(); const svc = build(fake); const { r } = await seed();
     const q = await svc.checkout.quote(deliveryQuote(r.id));
@@ -265,6 +276,18 @@ describe('driver settlement', () => {
     expect(row.status).toBe('on_hold');
     expect(fake.callsTo('transfers.create')).toHaveLength(0);
   });
+  it('NYC minimum pay: weekly shortfall transferred once; no top-up when pay already meets it', async () => {
+    const fake = createFakeStripe(); const s = build(fake); const { d } = await seed();
+    const t1 = await s.settlement.weeklyTopUp(d.id, '2026-11-02', 18_000, 9_800);
+    expect(t1).toMatchObject({ minimumCents: 11_065, amountCents: 1_265, status: 'paid' });
+    await s.settlement.weeklyTopUp(d.id, '2026-11-02', 18_000, 9_800);
+    const transfers = fake.calls.filter((c) => c.method === 'transfers.create');
+    expect(transfers).toHaveLength(1);
+    expect(transfers[0].params).toMatchObject({ amount: 1_265, destination: 'acct_drv1' });
+    expect(transfers[0].opts).toMatchObject({ idempotencyKey: `driver-topup:${d.id}:2026-11-02` });
+    const t2 = await s.settlement.weeklyTopUp(d.id, '2026-11-09', 3_600, 3_000);
+    expect(t2).toMatchObject({ amountCents: 0, status: 'paid' });
+  });
   it('third-party supplier: tip recorded for the provider tip field and invoice reconciled', async () => {
     const fake = createFakeStripe(); const svc = build(fake); const { r } = await seed();
     const q = await svc.checkout.quote({ ...deliveryQuote(r.id), delivery: { provider: 'uber_direct', providerQuoteId: 'dqt_1', deliveryCents: 1000, expiresAt: new Date(Date.now() + 600_000) } });
@@ -330,6 +353,28 @@ describe('onboarding (Accounts v2)', () => {
     const p = fake.callsTo('v2.accounts.create')[0].params;
     expect(p).toMatchObject({ dashboard: 'full', defaults: { responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } } });
     expect(p.configuration).toEqual({ recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } });
+  });
+});
+
+describe('registry (core API mirror)', () => {
+  it('upserts a restaurant by the caller ID, records tax acceptance once, and versions delivery consents', async () => {
+    const reg = new RegistryService(db);
+    const id = '6f1d2c1e-8a8b-4c55-9a51-0b3a1f3e9a10';
+    await reg.upsertRestaurant({ id, name: 'Dhaka Kitchen', contactEmail: 'a@test.dev' });
+    const renamed = await reg.upsertRestaurant({ id, name: 'Dhaka Kitchen II', contactEmail: 'a@test.dev' });
+    expect(renamed.name).toBe('Dhaka Kitchen II');
+    expect(await reg.restaurantStatus(id)).toMatchObject({ ready: false, taxResponsibilityAccepted: false });
+    const t1 = (await reg.acceptTaxResponsibility(id)).taxResponsibilityAcceptedAt;
+    const t2 = (await reg.acceptTaxResponsibility(id)).taxResponsibilityAcceptedAt;
+    expect(t1).toEqual(t2);
+    const v1 = await reg.setDeliveryConsent(id, { rule: { kind: 'customer_pays' }, acceptedBy: 'owner' });
+    const same = await reg.setDeliveryConsent(id, { rule: { kind: 'customer_pays' }, acceptedBy: 'owner' });
+    expect(same.id).toBe(v1.id);
+    const v2 = await reg.setDeliveryConsent(id, { rule: { kind: 'split_percent', restaurantBps: 5000 }, perOrderCapCents: 400, acceptedBy: 'owner' });
+    expect(v2.version).toBe(2);
+    const rows = await db.select().from(t.deliveryConsents).where(eq(t.deliveryConsents.restaurantId, id));
+    expect(rows.filter((r) => r.validTo === null)).toHaveLength(1);
+    await expect(reg.setDeliveryConsent(id, { rule: { kind: 'split_percent', restaurantBps: 12000 }, acceptedBy: 'owner' })).rejects.toThrow(/0–10000/);
   });
 });
 

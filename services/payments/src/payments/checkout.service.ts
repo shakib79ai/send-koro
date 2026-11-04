@@ -142,8 +142,22 @@ export class CheckoutService {
     );
   }
 
-  /** Restaurant declined or the 5-minute auto-decline fired → release the authorisation. */
-  async decline(orderId: string, reason: 'restaurant_declined' | 'auto_declined') {
+  /**
+   * Has the customer finished paying? Asked by the core API right after the app confirms the
+   * PaymentIntent (and by its sweep job, in case the app closed). Read-only apart from marking
+   * the order authorised, which the webhook also does.
+   */
+  async paymentStatus(orderId: string) {
+    const o = await this.loadOrder(orderId);
+    const pi = await this.stripe.paymentIntents.retrieve(o.paymentIntentId!, {}, { stripeAccount: o.stripeAccountId });
+    if (pi.status === 'requires_capture' && o.status === 'awaiting_payment') {
+      await this.db.update(orders).set({ status: 'authorized' }).where(and(eq(orders.id, o.id), eq(orders.status, 'awaiting_payment')));
+    }
+    return { orderId: o.id, paymentIntentStatus: pi.status, authorized: pi.status === 'requires_capture' || pi.status === 'succeeded' };
+  }
+
+  /** Restaurant declined, the customer cancelled before acceptance, or the 5-minute auto-decline fired → release the authorisation. */
+  async decline(orderId: string, reason: 'restaurant_declined' | 'auto_declined' | 'customer_cancelled') {
     const o = await this.loadOrder(orderId);
     const pi = await this.stripe.paymentIntents.cancel(o.paymentIntentId!, { cancellation_reason: 'abandoned' }, { stripeAccount: o.stripeAccountId, idempotencyKey: `order-cancel:${o.id}` });
     await this.db.update(orders).set({ status: 'declined' }).where(eq(orders.id, o.id));
