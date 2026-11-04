@@ -86,8 +86,8 @@ All four cases, the $43.40 invoice example and the $39 / $14 shared-delivery exa
 
    The brief leaves these to you.
 2. **No driver subscription.** Drivers pay no fees or subscription (decided 3 Nov 2026; this overrides the driver-subscription section of brief v1.2). Driver accounts only receive payouts, and nothing is created in Stripe for driver billing.
-3. **First month free.** On (`FIRST_MONTH_FREE=true`): the trial lasts until the first renewal anchor.
-4. **Renewal time.** Renewals happen on the 1st at 12:00 New York time. The tier job runs at 00:30 on the 1st, so refunds after midnight count in the month they're processed (the brief's proposed late-refund policy).
+3. **First month free.** On (`FIRST_MONTH_FREE=true`): a 30-day trial from sign-up (4 Nov 2026). Off: billing starts at sign-up.
+4. **Renewal time.** Each restaurant renews monthly on its own day, the day its trial ended. An hourly job locks the tier for subscriptions renewing in the next 24 hours, once the previous New York calendar month has ended. Refunds processed after a month ends count in the month they're processed (the brief's proposed late-refund policy). `subscriptions.renews_at` is kept in sync by `customer.subscription.updated`.
 5. **Service charges in the tier base.** Excluded (food only), per the brief's default.
 6. **Multi-location billing.** One subscription per restaurant billing entity, covering all its locations.
 
@@ -111,7 +111,7 @@ If Stripe proposes a different model, change `checkout.service.ts`. The brief sa
 src/core/          pure money logic: allocation, refunds, tiers (no I/O; fully unit-tested)
 src/payments/      Stripe + DB services: onboarding, checkout, ledger, refunds, settlement, subscriptions
 src/webhooks/      signature verification, dedupe, event handling
-src/jobs/          month-end tier job (00:30 ET on the 1st), owed-transfer retry (every 15 min)
+src/jobs/          renewal tier job (hourly, 24h before each renewal), owed-transfer retry (every 15 min)
 src/db/schema.ts   Drizzle schema; migration in drizzle/0000_init.sql
 scripts/           stripe-setup.ts (idempotent sandbox/live setup), run-tier-job.ts
 test/              unit + Postgres integration + HTTP tests

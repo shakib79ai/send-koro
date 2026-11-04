@@ -29,10 +29,11 @@ This is the source of truth for product and money rules. Where it differs from `
   | $10,000.01 – $15,000 | $350 |
   | over $15,000 | $500 |
 
-  - The first month is free.
+  - The first month is free: **exactly 30 days from sign-up** (4 Nov 2026).
+  - After the free month, each restaurant is billed every month on its own renewal day (the day the trial ended), with no proration. Example: joins 4 Nov → free until 4 Dec → first bill 4 Dec, based on November's sales.
+  - The plan is locked in the 24 hours before each renewal, once the previous calendar month has ended in New York time.
   - Zero or negative months pay the lowest plan.
   - One plan covers all of an account's locations.
-  - Billed on the 1st at 12:00 ET, with no proration.
   - Late refunds count in the month they're processed.
 - **Card processing** (2.9% + 30¢ under Stripe standard pricing) is paid by the restaurant on the food part of each order. **Customers are never charged a card processing fee** (3 Nov 2026).
 - **Sales tax is the restaurant's responsibility** (3 Nov 2026):

@@ -12,11 +12,11 @@ export class PaymentsJobs {
     @Inject(TOKENS.settlement) private readonly settlement: SettlementService,
   ) {}
 
-  /** 00:30 on the 1st (New York): lock last month's tier before the 12:00 renewal. */
-  @Cron('30 0 1 * *', { timeZone: 'America/New_York' })
-  async monthlyTiers() {
+  /** Hourly: lock the tier for restaurants renewing in the next 24 hours (each renews on its own sign-up day). */
+  @Cron('5 * * * *')
+  async renewalTiers() {
     const res = await this.subs.runRestaurantTierJob();
-    this.log.log(`Tier job: ${res.length} restaurants, ${res.filter((r) => r.changed).length} price changes`);
+    if (res.length) this.log.log(`Tier job: ${res.length} restaurants, ${res.filter((r) => r.changed).length} price changes`);
   }
 
   /** Every 15 minutes: pay driver transfers that were owed (balance became available, onboarding finished). */

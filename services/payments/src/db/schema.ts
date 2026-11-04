@@ -182,7 +182,9 @@ export const subscriptions = pgTable('subscriptions', {
   stripeItemId: text('stripe_item_id').notNull(),
   currentPriceId: text('current_price_id').notNull(),
   status: text('status').notNull(),
-}, (t) => [uniqueIndex('subscriptions_subject').on(t.subjectType, t.subjectId)]);
+  /** Next renewal (trial end, then the end of each billing period). The tier job runs in the 24 hours before it. */
+  renewsAt: timestamp('renews_at', { withTimezone: true }),
+}, (t) => [uniqueIndex('subscriptions_subject').on(t.subjectType, t.subjectId), index('subscriptions_renews_at').on(t.renewsAt)]);
 
 /** Locked monthly tier calculation (brief: period, food sales, refunds, base, rule version, price, invoice). */
 export const tierSnapshots = pgTable('tier_snapshots', {

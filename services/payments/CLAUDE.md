@@ -8,7 +8,7 @@ Implements `docs/STRIPE_TECHNICAL_BRIEF.md`, as amended by `docs/BUSINESS_MODEL.
 |---|---|
 | `src/core/allocation.ts` | F, S, X, D, R, C, T → Q, A, restaurant retained; delivery fee share; validation. Pure, no I/O. |
 | `src/core/refunds.ts` | Component refunds → charge refund + application-fee refund. |
-| `src/core/tiers.ts` | Restaurant subscription tiers, New York month boundaries, renewal anchor (12:00 ET on the 1st). |
+| `src/core/tiers.ts` | Restaurant subscription tiers, New York month boundaries, 30-day free trial, when a renewal's tier is due. |
 | `src/payments/checkout.service.ts` | Quote freeze → PaymentIntent on the restaurant account (manual capture) → accept/capture with final application fee. |
 | `src/payments/ledger.service.ts` | Per-order ledger, idempotent by `dedupe_key`; tier base query. |
 | `src/payments/refunds.service.ts` | Executes refund plans on Stripe; caps application-fee refunds at what was taken. |

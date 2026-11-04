@@ -21,7 +21,7 @@ export default function Plan() {
   }, [restaurant]);
   if (!restaurant) return null;
   const lastBand = bandFor(last?.foodCents ?? 0);
-  const firstMonth = new Date(restaurant.createdAt) >= startOfMonth(0);
+  const firstMonth = Date.now() < new Date(restaurant.createdAt).getTime() + 30 * 86_400_000; // 30-day free trial
   const nextBand = bandFor(month?.foodCents ?? 0);
   const commission = Math.round(calc * 0.15);
   const plan = BANDS[bandFor(calc)].priceCents;
@@ -35,7 +35,7 @@ export default function Plan() {
           <div style={{ fontFamily: 'var(--font-head)', fontSize: 40, fontWeight: 800 }}>{firstMonth ? '$0' : usd(BANDS[lastBand].priceCents).replace('.00', '')}<span className="small muted" style={{ fontFamily: 'var(--font-body)', fontWeight: 500 }}> / month</span></div>
           <span className="small">{firstMonth ? 'Your first month is free.' : `Based on ${usd(last?.foodCents ?? 0)} food sales last month · ${BANDS[lastBand].range} band`}</span>
           <div className="note small">So far this month: <b>{usd(month?.foodCents ?? 0)}</b> → next month’s plan would be <b>{usd(BANDS[nextBand].priceCents)}</b>.{nextBand < BANDS.length - 1 && <> {usd(BANDS[nextBand].upToCents - (month?.foodCents ?? 0))} more before the next band.</>}</div>
-          <p className="tiny muted" style={{ margin: 0 }}>First month free for every new restaurant. The band is checked at 12:00 ET on the 1st, after refunds; tips, tax, delivery and service charges don’t count. One plan covers all locations.</p>
+          <p className="tiny muted" style={{ margin: 0 }}>Your first 30 days are free. After that you’re billed every month on the day you joined, and the band is checked the day before, after refunds; tips, tax, delivery and service charges don’t count. One plan covers all locations.</p>
         </div>
         <div className="card">
           <table className="t"><thead><tr><th>Food sales last month</th><th>Plan</th><th /></tr></thead>

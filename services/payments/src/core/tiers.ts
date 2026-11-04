@@ -64,11 +64,19 @@ export function previousPeriod(at: Date, timeZone = 'America/New_York'): string 
   return `${py}-${String(pm).padStart(2, '0')}`;
 }
 
-/** Next 1st-of-month renewal instant: 12:00 America/New_York (gives the tier job a cutoff margin). */
-export function nextRenewalAnchor(after: Date, timeZone = 'America/New_York'): Date {
-  const fmt = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit' }).formatToParts(after);
-  let y = Number(fmt.find((p) => p.type === 'year')!.value);
-  let m = Number(fmt.find((p) => p.type === 'month')!.value) + 1;
-  if (m === 13) { m = 1; y += 1; }
-  return zonedTime(y, m, 1, 12, timeZone);
+/** First month free (BUSINESS_MODEL.md): exactly 30 days from sign-up; then billed on that day every month. */
+export const FREE_TRIAL_DAYS = 30;
+export const freeTrialEnd = (signedUpAt: Date): Date => new Date(signedUpAt.getTime() + FREE_TRIAL_DAYS * 86_400_000);
+
+/** The tier job looks at subscriptions renewing within this window. */
+export const TIER_JOB_HORIZON_MS = 24 * 3_600_000;
+
+/**
+ * Whether the tier for the renewal at `renewsAt` should be locked now: the renewal is within the
+ * next 24 hours and the calendar month it's based on (the one before the renewal) has ended in New York.
+ */
+export function tierDueAt(renewsAt: Date, now: Date): { due: boolean; period: string } {
+  const period = previousPeriod(renewsAt);
+  const due = renewsAt.getTime() - now.getTime() <= TIER_JOB_HORIZON_MS && now >= monthBounds(period).end;
+  return { due, period };
 }

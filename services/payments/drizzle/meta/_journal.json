@@ -22,6 +22,13 @@
       "when": 1793766795480,
       "tag": "0002_nyc_min_pay_top_ups",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793821466501,
+      "tag": "0003_subscription_renews_at",
+      "breakpoints": true
     }
   ]
 }

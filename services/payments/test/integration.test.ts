@@ -303,21 +303,45 @@ describe('driver settlement', () => {
 });
 
 describe('subscription tiers', () => {
+  it('first month free: 30-day trial from sign-up, renewal stored; tier job waits until 24h before renewal', async () => {
+    let clock = new Date('2026-11-04T16:52:00Z');
+    const fake = createFakeStripe(); const svc = build(fake, () => clock); const { r } = await seed();
+    const sub = await svc.subs.ensureRestaurantSubscription(r.id);
+    const trialEnd = new Date('2026-12-04T16:52:00Z');
+    const params = fake.callsTo('subscriptions.create')[0].params;
+    expect(params).toMatchObject({ customer_account: 'acct_rest1', trial_end: trialEnd.getTime() / 1000, trial_settings: { end_behavior: { missing_payment_method: 'pause' } } });
+    expect(params).not.toHaveProperty('billing_cycle_anchor');
+    expect(sub.renewsAt?.toISOString()).toBe(trialEnd.toISOString());
+    clock = new Date('2026-12-01T05:30:00Z'); // the 1st: nothing is due for a restaurant that renews on the 4th
+    expect(await svc.subs.runRestaurantTierJob()).toEqual([]);
+    clock = new Date('2026-12-03T17:00:00Z'); // 23h52m before renewal → November locked
+    const res = await svc.subs.runRestaurantTierJob();
+    expect(res).toMatchObject([{ period: '2026-11', netBaseCents: 0, tier: 'sk_restaurant_tier_050', changed: false }]);
+  });
+  it('customer.subscription.updated moves the stored renewal to the new period end', async () => {
+    const fake = createFakeStripe(); const svc = build(fake, () => new Date('2026-11-04T16:52:00Z')); const { r } = await seed();
+    const sub = await svc.subs.ensureRestaurantSubscription(r.id);
+    const periodEnd = Math.floor(new Date('2027-01-04T16:52:00Z').getTime() / 1000);
+    const ev = signedEvent(SECRETS.platform, { id: 'evt_sub_upd', type: 'customer.subscription.updated', data: { object: { id: sub.stripeSubscriptionId, object: 'subscription', status: 'active', trial_end: null, items: { data: [{ id: sub.stripeItemId, current_period_end: periodEnd }] } } } });
+    await svc.webhooks.handle(svc.webhooks.verify('platform', ev.payload, ev.header));
+    const [row] = await db.select().from(t.subscriptions);
+    expect(row).toMatchObject({ status: 'active' });
+    expect(row.renewsAt?.toISOString()).toBe('2027-01-04T16:52:00.000Z');
+  });
   it('October: $20,000 food − $1,000 refunds → $19,000 base → $500 price, no proration; re-run is a no-op', async () => {
     const fake = createFakeStripe(); const now = () => new Date('2026-11-01T05:30:00Z'); const svc = build(fake, now); const { r } = await seed();
     const sub = await svc.subs.ensureRestaurantSubscription(r.id);
-    expect(fake.callsTo('subscriptions.create')[0].params).toMatchObject({ customer_account: 'acct_rest1', trial_end: Math.floor(new Date('2026-12-01T17:00:00Z').getTime() / 1000) });
     // seed ledger: an order + entries dated in October (and one in November that must be ignored)
     const q = await svc.checkout.quote(deliveryQuote(r.id));
     const p = await svc.checkout.createPayment(q.quoteId);
     await svc.ledger.write(p.orderId, r.id, 'oct-sales', [{ account: 'restaurant_food', amountCents: 20_000_00, state: 'available' }], new Date('2026-10-15T15:00:00Z'));
     await svc.ledger.write(p.orderId, r.id, 'oct-refunds', [{ account: 'refund_food', amountCents: -1_000_00, state: 'paid' }], new Date('2026-10-31T23:30:00-04:00'));
     await svc.ledger.write(p.orderId, r.id, 'nov-sales', [{ account: 'restaurant_food', amountCents: 9_999_00, state: 'available' }], new Date('2026-11-01T00:30:00-04:00'));
-    const res = await svc.subs.runRestaurantTierJob();
+    const res = await svc.subs.runRestaurantTierJob('2026-10');
     expect(res[0]).toMatchObject({ period: '2026-10', netBaseCents: 19_000_00, tier: 'sk_restaurant_tier_500', changed: true });
     const up = fake.callsTo('subscriptions.update')[0];
     expect(up.params).toMatchObject({ subId: sub.stripeSubscriptionId, proration_behavior: 'none', items: [{ id: sub.stripeItemId, price: 'price_sk_restaurant_tier_500' }] });
-    const again = await svc.subs.runRestaurantTierJob();
+    const again = await svc.subs.runRestaurantTierJob('2026-10');
     expect(again[0].skipped).toBe('snapshot exists');
     expect(fake.callsTo('subscriptions.update')).toHaveLength(1);
     const [snap] = await db.select().from(t.tierSnapshots);

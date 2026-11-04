@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeAllocation } from '../src/core/allocation';
 import { emptyRefunded, fullCancellation, planRefund, RefundError } from '../src/core/refunds';
-import { monthBounds, nextRenewalAnchor, previousPeriod, RESTAURANT_TIERS, selectTier } from '../src/core/tiers';
+import { freeTrialEnd, monthBounds, previousPeriod, RESTAURANT_TIERS, selectTier, tierDueAt } from '../src/core/tiers';
 
 const equal = computeAllocation({ foodCents: 3000, serviceChargeCents: 0, restaurantTaxCents: 0, tipCents: 0, deliveryCents: 1000, consent: { rule: { kind: 'split_percent', restaurantBps: 5000 }, version: 1 } });
 const ctx = (over = {}) => ({ allocation: equal, already: emptyRefunded(), deliveryFulfilled: false, tipSettled: false, ...over });
@@ -61,8 +61,16 @@ describe('subscription tiers', () => {
     expect(previousPeriod(new Date('2026-11-01T05:30:00Z'))).toBe('2026-10');
     expect(previousPeriod(new Date('2027-01-15T12:00:00Z'))).toBe('2026-12');
   });
-  it('renewal anchor is noon New York on the next 1st, including the DST changeover day', () => {
-    expect(nextRenewalAnchor(new Date('2026-10-20T12:00:00Z')).toISOString()).toBe('2026-11-01T17:00:00.000Z'); // Nov 1 2026 is EST after 2am
-    expect(nextRenewalAnchor(new Date('2026-06-10T12:00:00Z')).toISOString()).toBe('2026-07-01T16:00:00.000Z');
+  it('first month free is exactly 30 days from sign-up, across the DST changeover', () => {
+    expect(freeTrialEnd(new Date('2026-11-04T16:52:00Z')).toISOString()).toBe('2026-12-04T16:52:00.000Z');
+    expect(freeTrialEnd(new Date('2026-10-20T12:00:00Z')).toISOString()).toBe('2026-11-19T12:00:00.000Z');
+  });
+  it('tier is due in the 24 hours before renewal, and only once the base month has ended in New York', () => {
+    const renews = new Date('2026-12-04T16:52:00Z'); // base month: November
+    expect(tierDueAt(renews, new Date('2026-12-03T16:00:00Z'))).toEqual({ due: false, period: '2026-11' }); // 24h52m before
+    expect(tierDueAt(renews, new Date('2026-12-03T17:00:00Z'))).toEqual({ due: true, period: '2026-11' });
+    const earlyFirst = new Date('2026-12-01T09:00:00Z'); // 4:00 ET on 1 Dec: November ends at 05:00Z
+    expect(tierDueAt(earlyFirst, new Date('2026-12-01T04:30:00Z')).due).toBe(false); // still 30 Nov in New York
+    expect(tierDueAt(earlyFirst, new Date('2026-12-01T05:05:00Z')).due).toBe(true);
   });
 });

@@ -104,11 +104,13 @@ export class WebhooksService {
       case 'invoice.created':
         await this.subscriptions.onInvoiceCreated(event.data.object);
         return;
-      case 'invoice.payment_failed':
-      case 'invoice.paid':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
-        return; // status sync / dunning notifications hook in here
+        await this.subscriptions.onSubscriptionChanged(event.data.object);
+        return;
+      case 'invoice.payment_failed':
+      case 'invoice.paid':
+        return; // dunning notifications hook in here
       default:
         return;
     }

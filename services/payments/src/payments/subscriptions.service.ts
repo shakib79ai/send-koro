@@ -2,17 +2,25 @@
  * Restaurant (and optional driver) subscriptions — brief §"Subscription billing rules".
  *
  * One platform Billing subscription per restaurant billing entity, billed to the restaurant's
- * Accounts v2 account through `customer_account`. Renewal is anchored to the 1st at 12:00
- * America/New_York so the month-end job has a cutoff margin: at 00:30 on the 1st it computes the
- * previous month's net food sales, picks the tier price and switches it with proration_behavior
- * 'none' before the renewal invoice is created. invoice.created double-checks and, if the job
- * did not run, pauses finalisation (auto_advance = false) and raises an alert.
+ * Accounts v2 account through `customer_account`. The first month is free: a 30-day trial from
+ * sign-up, after which the restaurant renews on that day every month (BUSINESS_MODEL.md, 4 Nov 2026).
+ * An hourly job finds subscriptions renewing in the next 24 hours whose base month (the calendar
+ * month before the renewal) has ended, computes that month's net food sales, picks the tier price
+ * and switches it with proration_behavior 'none' before the renewal invoice is created.
+ * invoice.created double-checks and, if the job did not run, pauses finalisation
+ * (auto_advance = false) and raises an alert.
  */
 import type Stripe from 'stripe';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, lte } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { restaurants, subscriptions, tierSnapshots } from '../db/schema';
-import { monthBounds, nextRenewalAnchor, previousPeriod, RESTAURANT_TIER_RULE_VERSION, RESTAURANT_TIERS, selectTier } from '../core/tiers';
+import { freeTrialEnd, monthBounds, previousPeriod, RESTAURANT_TIER_RULE_VERSION, RESTAURANT_TIERS, selectTier, TIER_JOB_HORIZON_MS, tierDueAt } from '../core/tiers';
+
+/** Next renewal of a Stripe subscription: the trial end while trialing, else the item's period end. */
+export function renewalOf(sub: Pick<Stripe.Subscription, 'status' | 'trial_end' | 'items'>): Date | null {
+  const end = sub.status === 'trialing' && sub.trial_end ? sub.trial_end : sub.items?.data?.[0]?.current_period_end ?? sub.trial_end;
+  return end ? new Date(end * 1000) : null;
+}
 import { LedgerService } from './ledger.service';
 
 export class SubscriptionsService {
@@ -53,7 +61,6 @@ export class SubscriptionsService {
     const [r] = await this.db.select().from(restaurants).where(eq(restaurants.id, restaurantId));
     if (!r?.stripeAccountId) throw new Error('Restaurant not onboarded');
     const lowest = await this.priceId(RESTAURANT_TIERS[0].lookupKey);
-    const anchor = nextRenewalAnchor(this.now());
     const sub = await this.stripe.subscriptions.create(
       {
         customer_account: r.stripeAccountId,
@@ -61,24 +68,41 @@ export class SubscriptionsService {
         collection_method: 'charge_automatically',
         payment_settings: { save_default_payment_method: 'on_subscription', payment_method_types: ['card', 'us_bank_account'] },
         ...(this.opts.firstMonthFree
-          ? { trial_end: Math.floor(anchor.getTime() / 1000), trial_settings: { end_behavior: { missing_payment_method: 'pause' } } }
-          : { billing_cycle_anchor: Math.floor(anchor.getTime() / 1000), proration_behavior: 'none' as const }),
+          ? { trial_end: Math.floor(freeTrialEnd(this.now()).getTime() / 1000), trial_settings: { end_behavior: { missing_payment_method: 'pause' } } }
+          : {}),
         metadata: { send_koro_type: 'restaurant_subscription', send_koro_restaurant_id: r.id },
       },
       { idempotencyKey: `restaurant-sub:${r.id}` },
     );
     const [row] = await this.db.insert(subscriptions).values({
       subjectType: 'restaurant', subjectId: r.id, stripeSubscriptionId: sub.id, stripeItemId: sub.items.data[0].id, currentPriceId: lowest, status: sub.status,
+      renewsAt: renewalOf(sub),
     }).onConflictDoNothing().returning();
     return row ?? (await this.db.select().from(subscriptions).where(eq(subscriptions.stripeSubscriptionId, sub.id)))[0];
   }
 
-  /** Month-end job. Safe to re-run: one snapshot per restaurant per period (unique index). */
-  async runRestaurantTierJob(period = previousPeriod(this.now())) {
-    const { start, end } = monthBounds(period);
-    const subs = await this.db.select().from(subscriptions).where(eq(subscriptions.subjectType, 'restaurant'));
+  /** Keeps status and next renewal in step with Stripe (customer.subscription.updated / .deleted). */
+  async onSubscriptionChanged(sub: Stripe.Subscription) {
+    await this.db.update(subscriptions).set({ status: sub.status, renewsAt: renewalOf(sub) }).where(eq(subscriptions.stripeSubscriptionId, sub.id));
+  }
+
+  /**
+   * Tier job. Without `period`, handles each restaurant whose renewal is due (within 24 hours, base
+   * month ended). With `period` ('YYYY-MM'), a manual run for every restaurant for that month.
+   * Safe to re-run: one snapshot per restaurant per period (unique index).
+   */
+  async runRestaurantTierJob(period?: string) {
+    const now = this.now();
+    const all = await this.db.select().from(subscriptions).where(and(eq(subscriptions.subjectType, 'restaurant'),
+      ...(period ? [] : [isNotNull(subscriptions.renewsAt), gt(subscriptions.renewsAt, now), lte(subscriptions.renewsAt, new Date(now.getTime() + TIER_JOB_HORIZON_MS))])));
+    const work = all.flatMap((s) => {
+      if (period) return [{ s, period }];
+      const due = tierDueAt(s.renewsAt!, now);
+      return due.due ? [{ s, period: due.period }] : [];
+    });
     const results: { restaurantId: string; period: string; netBaseCents: number; tier: string; changed: boolean; skipped?: string }[] = [];
-    for (const s of subs) {
+    for (const { s, period } of work) {
+      const { start, end } = monthBounds(period);
       const [already] = await this.db.select().from(tierSnapshots)
         .where(and(eq(tierSnapshots.subjectType, 'restaurant'), eq(tierSnapshots.subjectId, s.subjectId), eq(tierSnapshots.period, period)));
       if (already) { results.push({ restaurantId: s.subjectId, period, netBaseCents: already.netBaseCents, tier: already.priceLookupKey, changed: false, skipped: 'snapshot exists' }); continue; }
