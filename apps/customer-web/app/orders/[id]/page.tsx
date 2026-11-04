@@ -46,7 +46,7 @@ export default function TrackingPage({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="container" style={{ paddingTop: 24 }}>
-      <div className="menu-layout" style={{ gridTemplateColumns: '1fr 380px' }}>
+      <div className="two-col">
         <div className="card pad stack">
           <span className="small muted">Order {order.code}</span>
           <h1 style={{ fontSize: 30 }}>{order.statusText}</h1>

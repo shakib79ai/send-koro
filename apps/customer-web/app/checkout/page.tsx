@@ -67,7 +67,7 @@ export default function CheckoutPage() {
   return (
     <div className="container" style={{ paddingTop: 24 }}>
       <div className="row between"><h1 style={{ fontSize: 30 }}>Checkout</h1><span className="small muted">Secure checkout · Stripe</span></div>
-      <div className="menu-layout" style={{ marginTop: 16, gridTemplateColumns: '1fr 400px' }}>
+      <div className="two-col" style={{ marginTop: 16 }}>
         <div className="stack" style={{ gap: 16 }}>
           <div className="card pad stack">
             <div className="row between"><h3>{fulfilment === 'delivery' ? 'Deliver to' : 'Pick up'}</h3><div className="seg"><button className={fulfilment === 'delivery' ? 'on' : ''} onClick={() => setFulfilment('delivery')}>Delivery</button><button className={fulfilment === 'pickup' ? 'on' : ''} onClick={() => setFulfilment('pickup')}>Pickup</button></div></div>
@@ -108,7 +108,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <aside className="card pad stack sticky">
+        <aside className="card pad stack sticky summary-first">
           <div className="row"><div className="badge orange" style={{ fontSize: 14 }}>{cart.restaurantName.split(' ').map((w) => w[0]).slice(0, 2).join('')}</div><div><b>{cart.restaurantName}</b><div className="tiny muted">{cart.lines.reduce((a, l) => a + l.quantity, 0)} items · {fulfilment === 'delivery' ? 'Delivery' : 'Pickup'}{preview ? ` · about ${preview.etaMinutes} min` : ''}</div></div></div>
           {error && <div className="error">{error}</div>}
           {preview ? <Receipt receipt={preview.receipt} /> : <div className="skeleton" style={{ height: 180 }} />}
