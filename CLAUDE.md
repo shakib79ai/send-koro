@@ -14,6 +14,7 @@ Read before changing anything money-related:
 apps/customer-web/   Customer web + PWA (Next.js 15). Totals come only from the API; Stripe.js uses the restaurant's account.
 apps/restaurant-web/ Restaurant portal web + PWA (Next.js 15): live orders, menu, earnings, plan, settings. Roles enforced by the API.
 apps/admin-web/      Admin console (Next.js 15): operations, orders/refunds, dispatch, partners, money (payouts, settlements, billing), tax compliance.
+apps/customer-app/   Customer app, Flutter (iOS + Android): same features as customer web; Stripe payment sheet on the restaurant's account. Checked by CI.
 apps/driver-app/     Driver app, Flutter (iOS + Android): locked offers, trips, earnings, NYC minimum. Checked by CI (analyze, test, APK).
 services/api/        Core API (NestJS 11 + Drizzle): sign-in, restaurants, menus, orders, dispatch, drivers, admin. Has its own CLAUDE.md.
 services/payments/   Payments service (Stripe Connect). Only this service talks to Stripe. Has its own CLAUDE.md.
