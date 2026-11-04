@@ -1,0 +1,33 @@
+name: Driver app web preview
+# Builds the Flutter driver app for the web, for screenshots and quick reviews in a browser.
+# Run by hand: Actions → "Driver app web preview" → Run workflow (choose which API it talks to).
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: Core API base URL baked into the build
+        default: http://127.0.0.1:3931/v1
+        required: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/driver-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.32.x'
+          cache: true
+      - run: flutter create --org com.sendkoro --project-name send_koro_driver --platforms=web --no-pub .
+      - run: flutter pub get
+      # Serve CanvasKit from the build itself (no Google CDN) so it works on locked-down networks.
+      - run: flutter build web --release --no-web-resources-cdn --dart-define=API_URL=${{ inputs.api_url }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: driver-web-preview
+          path: apps/driver-app/build/web
+          retention-days: 7
