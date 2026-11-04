@@ -10,4 +10,5 @@ export const TOKENS = {
   subscriptions: Symbol('subscriptions'),
   webhooks: Symbol('webhooks'),
   registry: Symbol('registry'),
+  reports: Symbol('reports'),
 } as const;

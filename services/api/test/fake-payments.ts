@@ -68,6 +68,9 @@ export function createFakePayments() {
     async supplierAssigned(id, provider, did) { rec('supplierAssigned', id, provider, did); return {}; },
     async supplierTipSubmitted(id) { rec('supplierTipSubmitted', id); return {}; },
     async nycWeeklyTopUp(driverId, body) { rec('nycWeeklyTopUp', driverId, body); return { amountCents: 0, status: 'paid' }; },
+    async admin<T>(path: string, query?: Record<string, string | undefined>) { rec('admin', path, query); return { path } as T; },
+    async adminPost<T>(path: string, body?: unknown) { rec('adminPost', path, body); return { ok: true } as T; },
+    async health() { return true; },
   };
 
   return {

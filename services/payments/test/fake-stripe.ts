@@ -66,7 +66,8 @@ export function createFakeStripe(init: { availableBalance?: number; stripeFeeCen
     },
     refunds: { create: async (params: any, opts: any) => op('refunds.create', params, opts, () => ({ id: id('re'), ...params })) },
     applicationFees: { createRefund: async (feeId: string, params: any, opts: any) => op('applicationFees.createRefund', { feeId, ...params }, opts, () => ({ id: id('fr'), fee: feeId, ...params })) },
-    balance: { retrieve: async () => op('balance.retrieve', {}, undefined, () => ({ available: [{ currency: 'usd', amount: state.availableBalance }] })) },
+    balance: { retrieve: async (_p?: any, opts?: any) => op('balance.retrieve', {}, opts, () => ({ available: [{ currency: 'usd', amount: state.availableBalance }], pending: [{ currency: 'usd', amount: 0 }] })) },
+    payouts: { list: async (params: any, opts: any) => op('payouts.list', params, opts, () => ({ data: [{ id: 'po_1', amount: 12345, status: 'paid', arrival_date: 1_790_000_000, method: 'standard', failure_message: null }] })) },
     transfers: { create: async (params: any, opts: any) => op('transfers.create', params, opts, () => ({ id: id('tr'), ...params })) },
     prices: { list: async (params: any) => op('prices.list', params, undefined, () => ({ data: [{ id: `price_${params.lookup_keys[0]}` }] })) },
     subscriptions: {

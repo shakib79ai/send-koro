@@ -15,6 +15,7 @@ import { RefundsService } from '../src/payments/refunds.service';
 import { SettlementService } from '../src/payments/settlement.service';
 import { SubscriptionsService } from '../src/payments/subscriptions.service';
 import { RegistryService } from '../src/payments/registry.service';
+import { ReportsService } from '../src/payments/reports.service';
 import { WebhooksService } from '../src/webhooks/webhooks.service';
 import { createFakeStripe, signedEvent } from './fake-stripe';
 
@@ -191,13 +192,14 @@ describe('webhooks', () => {
   });
 });
 
+async function paidOrder(svc: ReturnType<typeof build>, fake: ReturnType<typeof createFakeStripe>, rId: string, tipCents = 0) {
+  const q = await svc.checkout.quote(deliveryQuote(rId, { tipCents }));
+  const p = await svc.checkout.createPayment(q.quoteId);
+  await payAndDeliverEvent(svc, fake, p.orderId, `evt_${p.orderId}`);
+  return p.orderId;
+}
+
 describe('refunds', () => {
-  async function paidOrder(svc: ReturnType<typeof build>, fake: ReturnType<typeof createFakeStripe>, rId: string, tipCents = 0) {
-    const q = await svc.checkout.quote(deliveryQuote(rId, { tipCents }));
-    const p = await svc.checkout.createPayment(q.quoteId);
-    await payAndDeliverEvent(svc, fake, p.orderId, `evt_${p.orderId}`);
-    return p.orderId;
-  }
   it('full cancellation: $35 refunded on the charge and the $10 allocation returned to the restaurant', async () => {
     const fake = createFakeStripe(); const svc = build(fake); const { r } = await seed();
     const orderId = await paidOrder(svc, fake, r.id);
@@ -353,6 +355,28 @@ describe('onboarding (Accounts v2)', () => {
     const p = fake.callsTo('v2.accounts.create')[0].params;
     expect(p).toMatchObject({ dashboard: 'full', defaults: { responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } } });
     expect(p.configuration).toEqual({ recipient: { capabilities: { stripe_balance: { stripe_transfers: { requested: true } } } } });
+  });
+});
+
+describe('admin reports', () => {
+  it('overview, restaurant money, payouts on the connected account, driver settlements and billing', async () => {
+    const fake = createFakeStripe(); const s = build(fake); const { r, d } = await seed();
+    const orderId = await paidOrder(s, fake, r.id, 400);
+    await s.settlement.ownDriverDelivered(orderId, d.id, 900);
+    const reports = new ReportsService(fake.stripe, db);
+    const range = [new Date(Date.now() - 86_400_000), new Date(Date.now() + 60_000)] as const;
+    const o = await reports.overview(...range);
+    expect(o).toMatchObject({ paidOrders: 1, commissionCents: 0 });
+    expect(o.volumeCents).toBeGreaterThan(0);
+    expect(o.driverTransfers).toEqual([{ status: 'paid', count: 1, cents: 1300 }]);
+    const m = await reports.restaurantMoney(r.id, ...range);
+    expect(m.transactions).toHaveLength(1);
+    expect(m.ledger.restaurant_food).toBeGreaterThan(0);
+    const p = await reports.accountPayouts('restaurant', r.id);
+    expect(p).toMatchObject({ stripeAccountId: 'acct_rest1', payouts: [{ id: 'po_1', amountCents: 12345 }] });
+    expect(fake.callsTo('payouts.list')[0].opts).toMatchObject({ stripeAccount: 'acct_rest1' });
+    expect((await reports.driverSettlements({})).transfers[0]).toMatchObject({ amountCents: 1300, driverName: 'Rahim Uddin' });
+    expect(await reports.billing()).toEqual([]);
   });
 });
 

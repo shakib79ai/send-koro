@@ -84,7 +84,11 @@ type Providers = Partial<Record<ThirdPartyProvider, DeliveryProviderAdapter>>;
       provide: TOKENS.drivers, inject: [TOKENS.db, TOKENS.payments, TOKENS.dispatch, TOKENS.orderState, TOKENS.notifications],
       useFactory: (db: Db, p: PaymentsClient, d: DispatchService, s: OrderStateService, n: NotificationsService) => new DriversService(db, p, d, s, n),
     },
-    { provide: TOKENS.admin, inject: [TOKENS.db, TOKENS.payments, TOKENS.dispatch, TOKENS.orderState], useFactory: (db: Db, p: PaymentsClient, d: DispatchService, s: OrderStateService) => new AdminService(db, p, d, s) },
+    {
+      provide: TOKENS.admin, inject: [TOKENS.db, TOKENS.payments, TOKENS.dispatch, TOKENS.orderState, TOKENS.env],
+      useFactory: (db: Db, p: PaymentsClient, d: DispatchService, s: OrderStateService, env: Env) =>
+        new AdminService(db, p, d, s, { uberDirect: env.UBER_DIRECT_MODE, doordashDrive: env.DOORDASH_DRIVE_MODE, dispatchOrder: env.DISPATCH_ORDER, sms: env.SMS_PROVIDER, push: env.PUSH_PROVIDER }),
+    },
     { provide: APP_GUARD, useClass: AuthGuard },
     ApiJobs,
   ],

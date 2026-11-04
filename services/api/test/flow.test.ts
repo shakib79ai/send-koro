@@ -198,8 +198,15 @@ describe('ordering → third-party courier', () => {
     expect(sum).toMatchObject({ orders: 1, foodCents: 3200, serviceChargeCents: 320, taxCents: 312, deliveryPaidCents: R, commissionCents: 0 });
     expect(sum.daily).toHaveLength(1);
 
-    // Admin sees the provider.
+    // Admin sees the provider, integration status and tax compliance.
     expect((await app.admin.order(orderId)).delivery?.provider).toBe('uber_direct');
+    const integ = await app.admin.integrationStatus();
+    expect(integ.paymentsServiceUp).toBe(true);
+    expect(integ.last7Days).toContainEqual({ provider: 'uber_direct', status: 'delivered', n: 1 });
+    const tax = await app.admin.taxCompliance();
+    expect(tax.policy.platformCollectsTax).toBe(false);
+    expect(tax.restaurants[0]).toMatchObject({ name: 'Dhaka Kitchen', locations: [{ state: 'NY', taxRatePpm: 88_750 }] });
+    expect(tax.restaurants[0].taxResponsibilityAcceptedAt).toBeTruthy();
   });
 
   it('falls back to DoorDash Drive when Uber Direct cannot quote', async () => {

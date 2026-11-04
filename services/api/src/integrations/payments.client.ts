@@ -37,6 +37,10 @@ export interface PaymentsClient {
   supplierAssigned(paymentsOrderId: string, provider: 'uber_direct' | 'doordash_drive', providerDeliveryId: string): Promise<unknown>;
   supplierTipSubmitted(paymentsOrderId: string): Promise<unknown>;
   nycWeeklyTopUp(driverId: string, body: { weekStart: string; tripSeconds: number; paidCents: number }): Promise<{ amountCents: number; status: string }>;
+  /** Admin console reads (money lives in the payments service). */
+  admin<T = unknown>(path: string, query?: Record<string, string | undefined>): Promise<T>;
+  adminPost<T = unknown>(path: string, body?: unknown): Promise<T>;
+  health(): Promise<boolean>;
 }
 
 export class PaymentsError extends Error {
@@ -79,5 +83,11 @@ export class HttpPaymentsClient implements PaymentsClient {
   ownDriverDelivered(id: string, driverId: string, driverPayCents: number) { return this.call('POST', `/fulfilment/${id}/own-driver-delivered`, { driverId, driverPayCents }); }
   supplierAssigned(id: string, provider: 'uber_direct' | 'doordash_drive', providerDeliveryId: string) { return this.call('POST', `/fulfilment/${id}/supplier-assigned`, { provider, providerDeliveryId }); }
   supplierTipSubmitted(id: string) { return this.call('POST', `/fulfilment/${id}/supplier-tip-submitted`); }
+  admin<T = unknown>(path: string, query: Record<string, string | undefined> = {}) {
+    const qs = new URLSearchParams(Object.entries(query).filter((e): e is [string, string] => e[1] !== undefined)).toString();
+    return this.call<T>('GET', `/admin/${path}${qs ? `?${qs}` : ''}`);
+  }
+  adminPost<T = unknown>(path: string, body?: unknown) { return this.call<T>('POST', `/admin/${path}`, body); }
+  async health() { try { const r = await this.fetchImpl(new URL('/health', this.baseUrl), { signal: AbortSignal.timeout(3000) }); return r.ok; } catch { return false; } }
   nycWeeklyTopUp(driverId: string, body: { weekStart: string; tripSeconds: number; paidCents: number }) { return this.call<{ amountCents: number; status: string }>('POST', `/drivers/${driverId}/nyc-top-ups`, body); }
 }

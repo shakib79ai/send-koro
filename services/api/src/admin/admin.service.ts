@@ -1,14 +1,52 @@
 /** Admin console backend: operations, restaurants, drivers, orders, refunds, dispatch retries. */
 import { and, desc, eq, gte, ilike, or, sql } from 'drizzle-orm';
 import type { Db } from '../db/client';
-import { deliveries, driverOffers, drivers, orderEvents, orders, restaurants, users } from '../db/schema';
+import { deliveries, driverOffers, drivers, locations, orderEvents, orders, restaurants, users } from '../db/schema';
+import { BLOCKED_STATES, LAUNCH_STATES } from '../core/tax';
 import { badRequest, notFound } from '../common/http';
 import type { PaymentsClient } from '../integrations/payments.client';
 import type { DispatchService } from '../dispatch/dispatch.service';
 import type { OrderStateService } from '../orders/order-state.service';
 
+export interface IntegrationConfig { uberDirect: string; doordashDrive: string; dispatchOrder: string; sms: string; push: string }
+
 export class AdminService {
-  constructor(private readonly db: Db, private readonly payments: PaymentsClient, private readonly dispatch: DispatchService, private readonly state: OrderStateService) {}
+  constructor(private readonly db: Db, private readonly payments: PaymentsClient, private readonly dispatch: DispatchService, private readonly state: OrderStateService, private readonly integrations: IntegrationConfig = { uberDirect: 'mock', doordashDrive: 'mock', dispatchOrder: '', sms: 'console', push: 'console' }) {}
+
+  /** Which courier and messaging integrations are on, in which mode, and recent delivery volume per provider. */
+  async integrationStatus() {
+    const since = new Date(Date.now() - 7 * 86_400_000);
+    const rows = await this.db.select({ provider: deliveries.provider, status: deliveries.status, n: sql<number>`count(*)::int` }).from(deliveries).where(gte(deliveries.createdAt, since)).groupBy(deliveries.provider, deliveries.status);
+    const [dr] = await this.db.select({ online: sql<number>`count(*) filter (where ${drivers.online})::int`, approved: sql<number>`count(*) filter (where ${drivers.status} = 'approved')::int`, pending: sql<number>`count(*) filter (where ${drivers.status} = 'applied')::int` }).from(drivers);
+    return {
+      paymentsServiceUp: await this.payments.health(),
+      providers: [
+        { key: 'uber_direct', name: 'Uber Direct', role: 'Primary', mode: this.integrations.uberDirect },
+        { key: 'doordash_drive', name: 'DoorDash Drive', role: 'Backup', mode: this.integrations.doordashDrive },
+        { key: 'own_driver', name: 'Send Koro drivers', role: 'Own fleet', mode: 'live', drivers: dr },
+      ],
+      dispatchOrder: this.integrations.dispatchOrder.split(','),
+      sms: this.integrations.sms, push: this.integrations.push,
+      last7Days: rows,
+    };
+  }
+
+  /** Tax & compliance: every restaurant's tax acceptance and location rates; launch states policy. */
+  async taxCompliance() {
+    const rs = await this.db.select().from(restaurants).orderBy(restaurants.name);
+    const ls = await this.db.select().from(locations);
+    return {
+      policy: { launchStates: [...LAUNCH_STATES], blockedStates: BLOCKED_STATES, platformCollectsTax: false },
+      restaurants: rs.map((r) => ({
+        id: r.id, name: r.name, status: r.status, taxResponsibilityAcceptedAt: r.taxResponsibilityAcceptedAt,
+        locations: ls.filter((l) => l.restaurantId === r.id).map((l) => ({ id: l.id, name: l.name, state: l.state, postalCode: l.postalCode, taxRatePpm: l.taxRatePpm })),
+      })),
+    };
+  }
+
+  /** Money views come from the payments service (charges live on each restaurant's own Stripe account). */
+  money<T = unknown>(path: string, query?: Record<string, string | undefined>) { return this.payments.admin<T>(path, query); }
+  moneyAction<T = unknown>(path: string, body?: unknown) { return this.payments.adminPost<T>(path, body); }
 
   async overview(since = new Date(Date.now() - 86_400_000)) {
     const [o] = await this.db.select({
@@ -46,7 +84,9 @@ export class AdminService {
     const where = [];
     if (q.status) where.push(sql`${orders.status} = ${q.status}`);
     if (q.search) where.push(or(ilike(orders.code, `%${q.search}%`), sql`${orders.id}::text = ${q.search}`));
-    return this.db.select().from(orders).where(where.length ? and(...where) : undefined).orderBy(desc(orders.createdAt)).limit(q.limit ?? 100);
+    return this.db.select({ o: orders, restaurantName: restaurants.name }).from(orders).innerJoin(restaurants, eq(restaurants.id, orders.restaurantId))
+      .where(where.length ? and(...where) : undefined).orderBy(desc(orders.createdAt)).limit(q.limit ?? 100)
+      .then((rows) => rows.map(({ o, restaurantName }) => ({ ...o, restaurantName })));
   }
 
   /** Full detail including the courier company — admin only. */

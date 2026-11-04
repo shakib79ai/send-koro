@@ -17,16 +17,19 @@ import { WebhooksService } from './webhooks/webhooks.service';
 import { PaymentsJobs } from './jobs/payments.jobs';
 import { RegistryService } from './payments/registry.service';
 import { HealthController } from './health.controller';
+import { ReportsService } from './payments/reports.service';
+import { ReportsController } from './payments/reports.controller';
 
 const log = new Logger('Payments');
 
 @Module({
   imports: [ScheduleModule.forRoot()],
-  controllers: [PaymentsController, WebhooksController, HealthController],
+  controllers: [PaymentsController, ReportsController, WebhooksController, HealthController],
   providers: [
     { provide: TOKENS.env, useFactory: () => loadEnv() },
     { provide: TOKENS.stripe, useFactory: (env: Env) => createStripe(env.STRIPE_SECRET_KEY), inject: [TOKENS.env] },
     { provide: TOKENS.db, useFactory: (env: Env) => createDb(env.DATABASE_URL).db, inject: [TOKENS.env] },
+    { provide: TOKENS.reports, useFactory: (s: Stripe, db: Db) => new ReportsService(s, db), inject: [TOKENS.stripe, TOKENS.db] },
     { provide: TOKENS.registry, useFactory: (db: Db) => new RegistryService(db), inject: [TOKENS.db] },
     { provide: TOKENS.ledger, useFactory: (s: Stripe, db: Db) => new LedgerService(s, db), inject: [TOKENS.stripe, TOKENS.db] },
     {
