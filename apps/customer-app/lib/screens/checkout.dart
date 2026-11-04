@@ -27,7 +27,7 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   int tipPercent = 18;
   int? customTipCents;
-  Preview? preview;
+  CheckoutPreview? preview;
   bool loading = false;
   bool placing = false;
   String? error;

@@ -3,7 +3,7 @@ import 'package:send_koro_customer/api/models.dart';
 
 void main() {
   test('receipt keeps the API lines and total; no courier names, no card fee', () {
-    final p = Preview.fromJson({
+    final p = CheckoutPreview.fromJson({
       'receipt': {
         'lines': [
           {'label': 'Subtotal', 'amountCents': 2540, 'kind': 'food'},

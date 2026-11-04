@@ -182,13 +182,13 @@ class Receipt {
       );
 }
 
-class Preview {
-  Preview({required this.receipt, required this.etaMinutes, required this.restaurantName, this.stripeAccount});
+class CheckoutPreview {
+  CheckoutPreview({required this.receipt, required this.etaMinutes, required this.restaurantName, this.stripeAccount});
   final Receipt receipt;
   final int etaMinutes;
   final String restaurantName;
   final String? stripeAccount;
-  factory Preview.fromJson(Map<String, dynamic> j) => Preview(
+  factory CheckoutPreview.fromJson(Map<String, dynamic> j) => CheckoutPreview(
         receipt: Receipt.fromJson((j['receipt'] as Map).cast<String, dynamic>()),
         etaMinutes: _int(j['etaMinutes']),
         restaurantName: _str((j['restaurant'] as Map?)?['name']),

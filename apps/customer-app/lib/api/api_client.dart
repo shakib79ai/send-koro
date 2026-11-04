@@ -142,7 +142,7 @@ class ApiClient {
   Future<RestaurantPage> restaurant(String locationId) async => RestaurantPage.fromJson(((await _send('GET', '/catalog/locations/$locationId', auth: false)) as Map).cast<String, dynamic>());
 
   // ── Orders ──
-  Future<Preview> preview(Map<String, dynamic> body) async => Preview.fromJson(((await _send('POST', '/orders/preview', body: body)) as Map).cast<String, dynamic>());
+  Future<CheckoutPreview> preview(Map<String, dynamic> body) async => CheckoutPreview.fromJson(((await _send('POST', '/orders/preview', body: body)) as Map).cast<String, dynamic>());
 
   /// Creates the order (or returns the same one for the same idempotency key) and its PaymentIntent.
   Future<({String orderId, Payment? payment})> place(Map<String, dynamic> body) async {
