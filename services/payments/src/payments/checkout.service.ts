@@ -13,7 +13,10 @@ import type Stripe from 'stripe';
 import { and, desc, eq, isNull, lte, or, gt } from 'drizzle-orm';
 import type { Db } from '../db/client';
 import { deliveryConsents, orders, quotes, restaurants } from '../db/schema';
-import { Allocation, AllocationError, applicationFeeAfterShare, computeAllocation, customerBreakdown, deliveryFeeShare, DeliveryConsent, DeliveryRule, estimateStripeFee, FeeEstimate, validateAllocation } from '../core/allocation';
+import { Allocation, AllocationError, applicationFeeAfterShare, customerBreakdown, deliveryFeeShare, DeliveryConsent, DeliveryRule, estimateStripeFee, FeeEstimate, PayoutCost, priceDelivery, validateAllocation } from '../core/allocation';
+
+export interface DeliveryMarkupConfig { enabled: boolean; ownDriver: PayoutCost; thirdParty: PayoutCost }
+const NO_MARKUP: DeliveryMarkupConfig = { enabled: false, ownDriver: { bps: 0, fixedCents: 0 }, thirdParty: { bps: 0, fixedCents: 0 } };
 
 export interface QuoteRequest {
   restaurantId: string;
@@ -24,11 +27,16 @@ export interface QuoteRequest {
   tipCents?: number;
   delivery:
     | { provider: 'pickup' }
+    /** deliveryCents is the courier price P (provider quote). The delivery price D adds the markup when enabled. */
     | { provider: 'uber_direct' | 'doordash_drive' | 'own_driver'; providerQuoteId?: string; deliveryCents: number; expiresAt: Date };
 }
 
 export class CheckoutService {
-  constructor(private readonly stripe: Stripe, private readonly db: Db, private readonly fee: FeeEstimate, private readonly now: () => Date = () => new Date()) {}
+  constructor(
+    private readonly stripe: Stripe, private readonly db: Db, private readonly fee: FeeEstimate,
+    private readonly now: () => Date = () => new Date(),
+    private readonly markup: DeliveryMarkupConfig = NO_MARKUP,
+  ) {}
 
   async activeConsent(restaurantId: string) {
     const at = this.now();
@@ -46,20 +54,23 @@ export class CheckoutService {
     if (!consentRow) throw new AllocationError('rule_not_authorized', 'Restaurant has no accepted delivery fee rule');
 
     const isPickup = req.delivery.provider === 'pickup';
-    const D = req.delivery.provider === 'pickup' ? 0 : req.delivery.deliveryCents;
+    const P = req.delivery.provider === 'pickup' ? 0 : req.delivery.deliveryCents;
     const consent: DeliveryConsent = {
       rule: consentRow.rule as DeliveryRule,
       perOrderCapCents: consentRow.perOrderCapCents ?? undefined,
       version: consentRow.version,
     };
-    const a = computeAllocation({
+    const payout = !this.markup.enabled || isPickup ? { bps: 0, fixedCents: 0 } : req.delivery.provider === 'own_driver' ? this.markup.ownDriver : this.markup.thirdParty;
+    // With the markup off, the price is just P (cardMarkup forced to 0 by using a zero fee estimate for pricing).
+    const priced = priceDelivery({
       foodCents: req.foodCents,
       serviceChargeCents: req.serviceChargeCents ?? 0,
       restaurantTaxCents: req.taxCents ?? 0,
       tipCents: isPickup ? 0 : req.tipCents ?? 0,
-      deliveryCents: D,
+      courierCents: P,
       consent,
-    });
+    }, this.markup.enabled && !isPickup ? this.fee : { bps: 0, fixedCents: 0 }, payout);
+    const a = priced.allocation;
     validateAllocation(a, this.fee);
     const estShare = deliveryFeeShare(a, estimateStripeFee(a.Q, this.fee));
 
@@ -70,11 +81,12 @@ export class CheckoutService {
       restaurantId: r.id, consentId: consentRow.id, consentVersion: consentRow.version,
       provider: req.delivery.provider, providerQuoteId: req.delivery.provider === 'pickup' ? null : req.delivery.providerQuoteId ?? null,
       foodCents: a.F, serviceChargeCents: a.S, taxCents: a.X, taxRecipient: 'restaurant', taxBreakdown: req.taxBreakdown ?? [],
-      tipCents: a.T, deliveryCents: a.D, customerDeliveryCents: a.C, restaurantDeliveryCents: a.R,
+      tipCents: a.T, deliveryCents: a.D, courierCents: priced.courierCents, payoutMarkupCents: priced.payoutMarkupCents, cardMarkupCents: priced.cardMarkupCents,
+      customerDeliveryCents: a.C, restaurantDeliveryCents: a.R,
       totalCents: a.Q, applicationFeeCents: a.A, estDeliveryFeeShareCents: estShare, expiresAt,
     }).returning();
     // stripeAccount lets the app initialise Stripe.js for this restaurant before the order exists (deferred intent).
-    return { quoteId: q.id, expiresAt, allocation: a, estDeliveryFeeShareCents: estShare, customer: customerBreakdown(a, r.name), stripeAccount: r.stripeAccountId };
+    return { quoteId: q.id, expiresAt, allocation: a, estDeliveryFeeShareCents: estShare, courierCents: priced.courierCents, payoutMarkupCents: priced.payoutMarkupCents, cardMarkupCents: priced.cardMarkupCents, customer: customerBreakdown(a, r.name), stripeAccount: r.stripeAccountId };
   }
 
   async createPayment(quoteId: string) {

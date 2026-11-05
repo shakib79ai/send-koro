@@ -18,6 +18,14 @@ const EnvSchema = z.object({
   EST_STRIPE_FEE_BPS: z.coerce.number().int().min(0).default(290),
   EST_STRIPE_FEE_FIXED_CENTS: z.coerce.number().int().min(0).default(30),
   FIRST_MONTH_FREE: bool.default('true'),
+  /** Delivery markup (5 Nov 2026): the delivery price covers card fees and payout fees on the delivery money. */
+  DELIVERY_MARKUP: bool.default('true'),
+  /** Own drivers: payout cost per delivery, as bps of (courier price + tip) plus fixed cents. Confirm with Stripe. */
+  OWN_DRIVER_PAYOUT_FEE_BPS: z.coerce.number().int().min(0).default(25),
+  OWN_DRIVER_PAYOUT_FEE_CENTS: z.coerce.number().int().min(0).default(25),
+  /** Third-party couriers: cost of paying their invoice, per delivery. 0 when invoices are paid by free bank transfer. */
+  THIRD_PARTY_PAYMENT_FEE_BPS: z.coerce.number().int().min(0).default(0),
+  THIRD_PARTY_PAYMENT_FEE_CENTS: z.coerce.number().int().min(0).default(0),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

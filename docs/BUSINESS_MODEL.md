@@ -31,7 +31,9 @@ This is the source of truth for product and money rules. Where it differs from `
 
   - The first month is free.
   - Zero or negative months pay the lowest plan.
-  - One plan covers all of an account's locations.
+  - **Each location has its own plan**, from that location's own net food sales (5 Nov 2026; replaces "one plan covers all locations"). All locations are billed together on one invoice, one line each.
+  - A new location's first month is free; locations that aren't live yet aren't billed (5 Nov 2026, proposed in the prototype; confirm).
+  - **Each location may use its own connected Stripe account** or the account's main one (5 Nov 2026). Direct charges for a location's orders go to that location's account.
   - Billed on the 1st at 12:00 ET, with no proration.
   - Late refunds count in the month they're processed.
 - **Card processing** (2.9% + 30¢ under Stripe standard pricing) is paid by the restaurant on the food part of each order. **Customers are never charged a card processing fee** (3 Nov 2026).
@@ -62,11 +64,16 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 
 ## Fulfilment
 
+- **Customers see each location separately** (5 Nov 2026), sorted by distance from their address, with a distance filter and address search. A location delivers only inside its own delivery radius; outside it the customer can order pickup.
+
 - **Providers:**
   - Uber Direct: primary.
   - DoorDash Drive: backup, pending approval.
   - Send Koro's own drivers.
-- **Delivery price** = the Uber Direct quote (about $7.80 average), including for own drivers.
+- **Courier price (P)** = the Uber Direct quote (about $7.80 average), including for own drivers.
+- **Delivery markup (5 Nov 2026):** the delivery price **D = P + payout cost + card-fee cost**, the smallest amount at which Send Koro breaks even on the delivery money after Stripe's card fee and the cost of paying the courier. The customer sees one "Delivery fee" line, the same for every payment method; there is never a separate card fee. **The markup and the courier's own price are never shown to customers or restaurants** (receipts, restaurant portal, invoices); they appear only in the admin console, where the markup is configured. Restaurant delivery rules (split, free over, pays all) apply to D.
+  - Payout cost per delivery: own drivers 0.25% of (P + tip) + 25¢; third-party couriers 0 while their invoices are paid by bank transfer. Both are settings and need Stripe's or the provider's written fee schedule.
+  - Example, $30 food, $2.66 tax, $5.40 tip, restaurant pays $3: third party P $7.80 → **D $8.18** (card cost 38¢); own driver → **D $8.48** (payout 29¢ + card 39¢). In both, the application fee after the card share equals P + tip (+ payout cost), so drivers and couriers still get their full pay and 100% of the tip.
 - **Third-party couriers** are paid by their invoice, not through Stripe Connect. The full tip is sent through their tip field (DoorDash requires 100% pass-through).
 
 ## Own drivers

@@ -6,7 +6,7 @@ Implements `docs/STRIPE_TECHNICAL_BRIEF.md`, as amended by `docs/BUSINESS_MODEL.
 
 | Path | What it does |
 |---|---|
-| `src/core/allocation.ts` | F, S, X, D, R, C, T → Q, A, restaurant retained; delivery fee share; validation. Pure, no I/O. |
+| `src/core/allocation.ts` | F, S, X, D, R, C, T → Q, A, restaurant retained; delivery fee share; `priceDelivery` (courier price + payout cost + card share = D); validation. Pure, no I/O. |
 | `src/core/refunds.ts` | Component refunds → charge refund + application-fee refund. |
 | `src/core/tiers.ts` | Restaurant subscription tiers, New York month boundaries, renewal anchor (12:00 ET on the 1st). |
 | `src/payments/checkout.service.ts` | Quote freeze → PaymentIntent on the restaurant account (manual capture) → accept/capture with final application fee. |
@@ -39,7 +39,6 @@ Only `services/api`, through `x-internal-key`, using `services/api/src/integrati
 
 ## Not built yet (ask before assuming)
 
-- Adding the delivery fee share to the delivery price at quote time. Today Send Koro absorbs about 33¢ per third-party order.
 - Crediting `fee_share_owed_to_restaurant` on the restaurant's next subscription invoice.
 - The fulfilment trigger in `app.module.ts` only logs. Dispatch lives in `services/api`, which starts it right after a successful capture.
 - Real service authentication. `InternalApiGuard` is a shared-key placeholder.

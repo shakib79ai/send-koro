@@ -38,7 +38,11 @@ const log = new Logger('Payments');
     },
     {
       provide: TOKENS.checkout, inject: [TOKENS.stripe, TOKENS.db, TOKENS.env],
-      useFactory: (s: Stripe, db: Db, env: Env) => new CheckoutService(s, db, { bps: env.EST_STRIPE_FEE_BPS, fixedCents: env.EST_STRIPE_FEE_FIXED_CENTS }),
+      useFactory: (s: Stripe, db: Db, env: Env) => new CheckoutService(s, db, { bps: env.EST_STRIPE_FEE_BPS, fixedCents: env.EST_STRIPE_FEE_FIXED_CENTS }, undefined, {
+        enabled: env.DELIVERY_MARKUP,
+        ownDriver: { bps: env.OWN_DRIVER_PAYOUT_FEE_BPS, fixedCents: env.OWN_DRIVER_PAYOUT_FEE_CENTS },
+        thirdParty: { bps: env.THIRD_PARTY_PAYMENT_FEE_BPS, fixedCents: env.THIRD_PARTY_PAYMENT_FEE_CENTS },
+      }),
     },
     { provide: TOKENS.refunds, inject: [TOKENS.stripe, TOKENS.db, TOKENS.ledger], useFactory: (s: Stripe, db: Db, l: LedgerService) => new RefundsService(s, db, l) },
     { provide: TOKENS.settlement, inject: [TOKENS.stripe, TOKENS.db, TOKENS.ledger], useFactory: (s: Stripe, db: Db, l: LedgerService) => new SettlementService(s, db, l) },

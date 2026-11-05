@@ -66,6 +66,10 @@ export const quotes = pgTable('quotes', {
   taxBreakdown: jsonb('tax_breakdown').notNull().default(sql`'[]'::jsonb`),
   tipCents: cents('tip_cents'),
   deliveryCents: cents('delivery_cents'),
+  /** P: the courier price before markup (what the provider quoted). D = P + payout markup + card markup. */
+  courierCents: integer('courier_cents').notNull().default(0),
+  payoutMarkupCents: integer('payout_markup_cents').notNull().default(0),
+  cardMarkupCents: integer('card_markup_cents').notNull().default(0),
   customerDeliveryCents: cents('customer_delivery_cents'),
   restaurantDeliveryCents: cents('restaurant_delivery_cents'),
   totalCents: cents('total_cents'),

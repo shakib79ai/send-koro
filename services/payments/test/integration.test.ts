@@ -9,6 +9,7 @@ import { createDb, Db } from '../src/db/client';
 import { runMigrations } from '../src/db/migrate';
 import * as t from '../src/db/schema';
 import { CheckoutService } from '../src/payments/checkout.service';
+import { estimateStripeFee, priceDelivery } from '../src/core/allocation';
 import { LedgerService } from '../src/payments/ledger.service';
 import { OnboardingService } from '../src/payments/onboarding.service';
 import { RefundsService } from '../src/payments/refunds.service';
@@ -161,6 +162,39 @@ describe('processing fees come out of the delivery money', () => {
     expect(a).toEqual({ tipCentsToSubmit: 400, quotedCents: 1000 });
     const rows = (await db.select().from(t.ledgerEntries).where(eq(t.ledgerEntries.orderId, p.orderId))).filter((x) => ['supplier_cost_owed', 'fulfillment_margin'].includes(x.account));
     expect(Object.fromEntries(rows.map((x) => [x.account, x.amountCents]))).toEqual({ supplier_cost_owed: -1000, fulfillment_margin: -33 });
+  });
+  it('delivery markup on: the price covers the card share, the courier is owed only its quote, and Send Koro breaks even', async () => {
+    const pricing = { bps: 290, fixedCents: 30 };
+    const expected = priceDelivery({ foodCents: 3000, serviceChargeCents: 0, restaurantTaxCents: 0, tipCents: 400, courierCents: 1000, consent: { rule: { kind: 'split_percent', restaurantBps: 5000 }, version: 1 } }, pricing, { bps: 0, fixedCents: 0 });
+    const fake = createFakeStripe({ stripeFeeCents: estimateStripeFee(expected.allocation.Q, pricing) }); const svc = build(fake); const { r } = await seed();
+    const markup = new CheckoutService(fake.stripe, db, pricing, () => new Date(), { enabled: true, ownDriver: { bps: 25, fixedCents: 25 }, thirdParty: { bps: 0, fixedCents: 0 } });
+    const q = await markup.quote({ ...deliveryQuote(r.id), delivery: { provider: 'uber_direct', deliveryCents: 1000, expiresAt: new Date(Date.now() + 600_000) } });
+    expect(q.allocation.D).toBe(expected.allocation.D);
+    expect(q.courierCents).toBe(1000);
+    expect(q.cardMarkupCents).toBe(expected.allocation.D - 1000);
+    expect(q.cardMarkupCents).toBeGreaterThan(0);
+    const [row] = await db.select().from(t.quotes).where(eq(t.quotes.id, q.quoteId));
+    expect([row.courierCents, row.cardMarkupCents, row.payoutMarkupCents]).toEqual([1000, q.cardMarkupCents, 0]);
+    const p = await markup.createPayment(q.quoteId);
+    await payAndDeliverEvent(svc, fake, p.orderId, 'evt_fee_markup');
+    const a = await svc.settlement.supplierAssigned(p.orderId, 'uber_direct', 'del_m1');
+    expect(a).toEqual({ tipCentsToSubmit: 400, quotedCents: 1000 }); // the provider is owed its own quote, not D
+    const rows = (await db.select().from(t.ledgerEntries).where(eq(t.ledgerEntries.orderId, p.orderId))).filter((x) => ['supplier_cost_owed', 'fulfillment_margin'].includes(x.account));
+    const m = Object.fromEntries(rows.map((x) => [x.account, x.amountCents]));
+    expect(m.supplier_cost_owed).toBe(-1000);
+    const margin = m.fulfillment_margin ?? 0; // a zero entry isn't written
+    expect(margin).toBeGreaterThanOrEqual(0);
+    expect(margin).toBeLessThanOrEqual(2);
+  });
+  it('delivery markup on: own drivers also get the payout cost added, and still receive locked pay + the full tip', async () => {
+    const fake = createFakeStripe(); const svc = build(fake); const { r } = await seed();
+    const markup = new CheckoutService(fake.stripe, db, { bps: 290, fixedCents: 30 }, () => new Date(), { enabled: true, ownDriver: { bps: 25, fixedCents: 25 }, thirdParty: { bps: 0, fixedCents: 0 } });
+    const q = await markup.quote(deliveryQuote(r.id));
+    expect(q.payoutMarkupCents).toBe(Math.ceil((1000 + 400) * 25 / 10000) + 25);
+    expect(q.allocation.D).toBe(1000 + q.payoutMarkupCents + q.cardMarkupCents);
+    const pickup = await markup.quote({ ...deliveryQuote(r.id), tipCents: 0, delivery: { provider: 'pickup' } });
+    expect([pickup.allocation.D, pickup.cardMarkupCents, pickup.payoutMarkupCents]).toEqual([0, 0, 0]);
+    void svc;
   });
 });
 

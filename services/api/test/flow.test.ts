@@ -186,6 +186,9 @@ describe('ordering → third-party courier', () => {
     // Customer view never names the courier company.
     const view = await app.orders.customerOrder(cu.c, orderId);
     expect(JSON.stringify(view)).not.toMatch(/uber|doordash|track\.example/i);
+    // The delivery markup and the courier's own price stay in admin (5 Nov 2026): customers and restaurants see one delivery fee.
+    expect(JSON.stringify(view)).not.toMatch(/markup|courierCents|providerQuote|feeCents/i);
+    expect(JSON.stringify(await app.orders.liveOrders(s.owner, s.r.id))).not.toMatch(/markup|courierCents|providerQuote|feeCents|uber|doordash/i);
 
     // Courier webhooks move the order along.
     const [del] = await db.select().from(t.deliveries).where(eq(t.deliveries.orderId, orderId));

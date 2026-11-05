@@ -146,6 +146,62 @@ export function applicationFeeAfterShare(a: Allocation, stripeFeeCents: Cents): 
 }
 
 /**
+ * Delivery markup (5 Nov 2026). The delivery price D covers the courier price plus the fees the
+ * delivery money causes, so Send Koro breaks even on every delivery and never takes a fee from a
+ * driver's pay or tip:
+ *
+ *   payout cost   = ceil((P + T) × bps / 10000) + fixed           (own drivers; per delivery)
+ *                   ceil((P + T) × bps / 10000) + fixed           (third party, if we pay a fee to pay them)
+ *   card cost     = deliveryFeeShare(allocation(D), stripeFee(Q))  (the delivery money's share)
+ *   D             = smallest D with  D ≥ P + payout cost + card cost
+ *
+ * Then application fee after share (A − share) = P + T + payout cost: exactly the courier price, the
+ * full tip, and the payout fee. The customer sees one "Delivery fee" line; there is never a separate
+ * card fee, and the price is the same for every payment method.
+ *
+ * Worked example (third party, P = 780, F = 3000, X = 266, T = 540, restaurant pays $3.00):
+ *   D = 818 → C = 518, Q = 4324, Stripe fee 156, delivery share 38; A − share = 1358 − 38 = 1320 = P + T.
+ */
+export interface PayoutCost { bps: number; fixedCents: Cents }
+export type CourierKind = 'third_party' | 'own_driver';
+export interface DeliveryPriceInput extends Omit<AllocationInput, 'deliveryCents'> {
+  /** P: the courier price (provider quote; for own drivers, the same quote basis). */
+  courierCents: Cents;
+}
+export interface DeliveryPrice {
+  allocation: Allocation;
+  courierCents: Cents;
+  payoutMarkupCents: Cents;
+  cardMarkupCents: Cents;
+  /** Card share expected on this allocation (domestic card estimate). */
+  estDeliveryFeeShareCents: Cents;
+}
+
+export function payoutCost(courierCents: Cents, tipCents: Cents, cost: PayoutCost): Cents {
+  assertCents('courierCents', courierCents); assertCents('tipCents', tipCents);
+  if (!Number.isInteger(cost.bps) || cost.bps < 0 || !isCents(cost.fixedCents)) throw new AllocationError('invalid_amount', 'payout cost must be whole basis points and cents');
+  if (cost.bps === 0 && cost.fixedCents === 0) return 0;
+  return Math.ceil(((courierCents + tipCents) * cost.bps) / 10000) + cost.fixedCents;
+}
+
+export function priceDelivery(input: DeliveryPriceInput, fee: FeeEstimate, payout: PayoutCost): DeliveryPrice {
+  const P = input.courierCents;
+  const payoutCents = payoutCost(P, input.tipCents, payout);
+  const floor = P + payoutCents;
+  let D = floor;
+  let a = computeAllocation({ ...input, deliveryCents: D });
+  // D only grows, and each step adds at most the extra share on a few cents, so this settles quickly.
+  for (let i = 0; i < 20; i++) {
+    const need = floor + deliveryFeeShare(a, estimateStripeFee(a.Q, fee));
+    if (need <= D) break;
+    D = need;
+    a = computeAllocation({ ...input, deliveryCents: D });
+  }
+  const share = deliveryFeeShare(a, estimateStripeFee(a.Q, fee));
+  return { allocation: a, courierCents: P, payoutMarkupCents: payoutCents, cardMarkupCents: D - floor, estDeliveryFeeShareCents: share };
+}
+
+/**
  * Brief §"Validation and changes": reject the quote when the restaurant cannot fund R plus its own
  * share of the processing fee from this order's proceeds, and respect application fee limits.
  */

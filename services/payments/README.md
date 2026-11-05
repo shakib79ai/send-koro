@@ -101,7 +101,7 @@ These are the brief's review questions, and the code assumes each answer is "yes
 4. That platform-to-driver transfers can be funded from those application-fee receipts.
 5. That Send Koro's branded marketplace presentation fits restaurant-as-merchant direct charges.
 6. That Billing via `customer_account` works for Accounts v2 restaurants.
-7. Your fee schedule.
+7. Your fee schedule, including payout fees on own-driver accounts. The delivery markup uses `OWN_DRIVER_PAYOUT_FEE_BPS`/`_CENTS` (default 0.25% + 25¢); set them to the confirmed numbers.
 
 If Stripe proposes a different model, change `checkout.service.ts`. The brief says not to switch silently to platform collection.
 

@@ -14,6 +14,9 @@ import type { Db } from '../db/client';
 import { drivers, driverTopUps, driverTransfers, fulfillments, orders, quotes, supplierObligations } from '../db/schema';
 import { LedgerService } from './ledger.service';
 
+/** What the courier company is owed: its own quote P, not the marked-up delivery price D. Older quotes have no P. */
+const courierPrice = (q: { courierCents: number; deliveryCents: number }) => (q.courierCents > 0 ? q.courierCents : q.deliveryCents);
+
 export class SettlementService {
   constructor(private readonly stripe: Stripe, private readonly db: Db, private readonly ledger: LedgerService) {}
 
@@ -141,14 +144,15 @@ export class SettlementService {
     const [o] = await this.db.select().from(orders).where(eq(orders.id, orderId));
     const [q] = await this.db.select().from(quotes).where(eq(quotes.id, o.quoteId));
     await this.db.insert(fulfillments).values({ orderId, provider, providerDeliveryId, tipCents: q.tipCents, status: 'assigned' }).onConflictDoNothing({ target: fulfillments.orderId });
-    await this.db.insert(supplierObligations).values({ orderId, provider, providerDeliveryId, quotedCents: q.deliveryCents, tipCents: q.tipCents }).onConflictDoNothing({ target: supplierObligations.orderId });
-    // The provider is paid its full quote and the full tip; the processing-fee share is a delivery cost.
+    await this.db.insert(supplierObligations).values({ orderId, provider, providerDeliveryId, quotedCents: courierPrice(q), tipCents: q.tipCents }).onConflictDoNothing({ target: supplierObligations.orderId });
+    // The provider is paid its full quote and the full tip. The margin is the markup in D minus the delivery money's
+    // processing-fee share: about 0 with the delivery markup on, −share for older quotes priced at P.
     await this.ledger.write(orderId, o.restaurantId, `supplier:${orderId}`, [
-      { account: 'supplier_cost_owed', amountCents: -q.deliveryCents, state: 'owed' },
-      { account: 'fulfillment_margin', amountCents: -(o.deliveryFeeShareCents ?? 0), state: 'pending' },
+      { account: 'supplier_cost_owed', amountCents: -courierPrice(q), state: 'owed' },
+      { account: 'fulfillment_margin', amountCents: q.deliveryCents - courierPrice(q) - (o.deliveryFeeShareCents ?? 0), state: 'pending' },
     ]);
     // Caller submits q.tipCents (in cents, 100%) in the provider's dedicated tip field, then calls markTipSubmitted.
-    return { tipCentsToSubmit: q.tipCents, quotedCents: q.deliveryCents };
+    return { tipCentsToSubmit: q.tipCents, quotedCents: courierPrice(q) };
   }
 
   async markTipSubmitted(orderId: string) {

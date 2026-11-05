@@ -1,6 +1,6 @@
 /** Brief §"Payment allocation" table, invoice example and invariants. */
 import { describe, expect, it } from 'vitest';
-import { AllocationError, applicationFeeAfterShare, computeAllocation, customerBreakdown, deliveryFeeShare, DeliveryConsent, estimateStripeFee, validateAllocation } from '../src/core/allocation';
+import { AllocationError, applicationFeeAfterShare, computeAllocation, customerBreakdown, deliveryFeeShare, DeliveryConsent, estimateStripeFee, payoutCost, priceDelivery, validateAllocation } from '../src/core/allocation';
 
 const c = (rule: DeliveryConsent['rule'], cap?: number): DeliveryConsent => ({ rule, perOrderCapCents: cap, version: 1 });
 const base = { foodCents: 3000, serviceChargeCents: 0, restaurantTaxCents: 0, tipCents: 0, deliveryCents: 1000 };
@@ -122,5 +122,52 @@ describe('delivery money bears its share of the processing fee', () => {
     const restaurantNet = a.Q - fee - applicationFeeAfterShare(a, fee); // what lands on the restaurant account
     const foodOnlyFee = fee - deliveryFeeShare(a, fee);
     expect(restaurantNet).toBe(a.restaurantRetained - foodOnlyFee);
+  });
+});
+
+describe('delivery markup: card + payout fees (5 Nov 2026)', () => {
+  const rule = c({ kind: 'split_fixed', restaurantCents: 300 });
+  const order = { foodCents: 3000, serviceChargeCents: 0, restaurantTaxCents: 266, tipCents: 540, consent: rule };
+  const none = { bps: 0, fixedCents: 0 };
+
+  it('third party: courier $7.80 → delivery fee $8.18, Send Koro breaks even', () => {
+    const p = priceDelivery({ ...order, courierCents: 780 }, fee, none);
+    const a = p.allocation;
+    expect([a.D, a.C, a.R, a.Q]).toEqual([818, 518, 300, 4324]);
+    expect([p.payoutMarkupCents, p.cardMarkupCents]).toEqual([0, 38]);
+    const stripe = estimateStripeFee(a.Q, fee);
+    expect(stripe).toBe(156);
+    expect(deliveryFeeShare(a, stripe)).toBe(38);
+    // What we keep from the delivery money pays the courier quote and the full tip, nothing left over or missing.
+    expect(applicationFeeAfterShare(a, stripe)).toBe(780 + 540);
+  });
+
+  it('own driver: adds the payout cost too ($8.48), and the driver still gets 100% of the tip', () => {
+    const p = priceDelivery({ ...order, courierCents: 780 }, fee, { bps: 25, fixedCents: 25 });
+    const a = p.allocation;
+    expect(p.payoutMarkupCents).toBe(payoutCost(780, 540, { bps: 25, fixedCents: 25 }));
+    expect(p.payoutMarkupCents).toBe(29); // ceil(1320 × 0.25%) + 25¢
+    expect([a.D, p.cardMarkupCents]).toEqual([848, 39]);
+    const stripe = estimateStripeFee(a.Q, fee);
+    expect(applicationFeeAfterShare(a, stripe)).toBe(780 + 540 + 29);
+  });
+
+  it('never leaves Send Koro short, across rules, tips and courier prices', () => {
+    const rules: DeliveryConsent['rule'][] = [{ kind: 'customer_pays' }, { kind: 'restaurant_pays' }, { kind: 'split_percent', restaurantBps: 5000 }, { kind: 'split_fixed', restaurantCents: 300 }, { kind: 'free_above', minFoodCents: 2500 }];
+    for (const r of rules) for (const tip of [0, 199, 540, 1500]) for (const P of [450, 780, 1290]) for (const F of [900, 3000, 12000]) {
+      for (const payout of [none, { bps: 25, fixedCents: 25 }]) {
+        const p = priceDelivery({ foodCents: F, serviceChargeCents: 0, restaurantTaxCents: Math.round(F * 0.08875), tipCents: tip, courierCents: P, consent: c(r) }, fee, payout);
+        const stripe = estimateStripeFee(p.allocation.Q, fee);
+        const kept = applicationFeeAfterShare(p.allocation, stripe);
+        expect(kept).toBeGreaterThanOrEqual(P + tip + p.payoutMarkupCents);
+        expect(kept - (P + tip + p.payoutMarkupCents)).toBeLessThanOrEqual(2); // at most a cent or two of rounding
+        expect(p.allocation.C + p.allocation.R).toBe(p.allocation.D);
+      }
+    }
+  });
+
+  it('pickup has no delivery price and no markup', () => {
+    const p = priceDelivery({ ...order, tipCents: 0, courierCents: 0 }, fee, none);
+    expect([p.allocation.D, p.cardMarkupCents, p.payoutMarkupCents]).toEqual([0, 0, 0]);
   });
 });
