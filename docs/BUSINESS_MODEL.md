@@ -72,8 +72,8 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
   - Send Koro's own drivers.
 - **Courier price (P)** = the Uber Direct quote (about $7.80 average), including for own drivers.
 - **Delivery markup (5 Nov 2026):** the delivery price **D = P + payout cost + card-fee cost**, the smallest amount at which Send Koro breaks even on the delivery money after Stripe's card fee and the cost of paying the courier. The customer sees one "Delivery fee" line, the same for every payment method; there is never a separate card fee. **The markup and the courier's own price are never shown to customers or restaurants** (receipts, restaurant portal, invoices); they appear only in the admin console, where the markup is configured. Restaurant delivery rules (split, free over, pays all) apply to D.
-  - Payout cost per delivery: own drivers 0.25% of (P + tip) + 25¢; third-party couriers 0 while their invoices are paid by bank transfer. Both are settings and need Stripe's or the provider's written fee schedule.
-  - Example, $30 food, $2.66 tax, $5.40 tip, restaurant pays $3: third party P $7.80 → **D $8.18** (card cost 38¢); own driver → **D $8.48** (payout 29¢ + card 39¢). In both, the application fee after the card share equals P + tip (+ payout cost), so drivers and couriers still get their full pay and 100% of the tip.
+  - Payout cost per delivery: 0.25% of (P + tip) + 25¢ for both own drivers and third-party couriers (5 Nov 2026). For Uber Direct and DoorDash the money is paid out to Send Koro's bank and then settled to the provider. Both are settings and need Stripe's or the provider's written fee schedule.
+  - Example, $30 food, $2.66 tax, $5.40 tip, restaurant pays $3: own driver or third party, P $7.80 → **D $8.48** (payout 29¢ + card 39¢). In both, the application fee after the card share equals P + tip (+ payout cost), so drivers and couriers still get their full pay and 100% of the tip.
 - **Third-party couriers** are paid by their invoice, not through Stripe Connect. The full tip is sent through their tip field (DoorDash requires 100% pass-through).
 
 ## Own drivers

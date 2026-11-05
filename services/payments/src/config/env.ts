@@ -23,9 +23,9 @@ const EnvSchema = z.object({
   /** Own drivers: payout cost per delivery, as bps of (courier price + tip) plus fixed cents. Confirm with Stripe. */
   OWN_DRIVER_PAYOUT_FEE_BPS: z.coerce.number().int().min(0).default(25),
   OWN_DRIVER_PAYOUT_FEE_CENTS: z.coerce.number().int().min(0).default(25),
-  /** Third-party couriers: cost of paying their invoice, per delivery. 0 when invoices are paid by free bank transfer. */
-  THIRD_PARTY_PAYMENT_FEE_BPS: z.coerce.number().int().min(0).default(0),
-  THIRD_PARTY_PAYMENT_FEE_CENTS: z.coerce.number().int().min(0).default(0),
+  /** Third-party couriers (Uber Direct, DoorDash): payout to Send Koro's bank, then settlement to the provider. Per delivery. */
+  THIRD_PARTY_PAYMENT_FEE_BPS: z.coerce.number().int().min(0).default(25),
+  THIRD_PARTY_PAYMENT_FEE_CENTS: z.coerce.number().int().min(0).default(25),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

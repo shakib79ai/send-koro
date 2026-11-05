@@ -151,7 +151,7 @@ export function applicationFeeAfterShare(a: Allocation, stripeFeeCents: Cents): 
  * driver's pay or tip:
  *
  *   payout cost   = ceil((P + T) × bps / 10000) + fixed           (own drivers; per delivery)
- *                   ceil((P + T) × bps / 10000) + fixed           (third party, if we pay a fee to pay them)
+ *                   ceil((P + T) × bps / 10000) + fixed           (third party: payout to us, then settlement to the provider)
  *   card cost     = deliveryFeeShare(allocation(D), stripeFee(Q))  (the delivery money's share)
  *   D             = smallest D with  D ≥ P + payout cost + card cost
  *
