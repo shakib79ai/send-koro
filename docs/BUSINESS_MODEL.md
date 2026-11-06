@@ -64,11 +64,11 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 
 ## Fulfilment
 
-- **Customers see each location separately** (5 Nov 2026), sorted by distance from their address, with a distance filter and address search. A location delivers only inside its own delivery radius; outside it the customer can order pickup.
+- **Customers see each location separately** (5 Nov 2026), nearest first, with address search (no distance shown or filtered; 6 Nov 2026). A location delivers only inside its own delivery radius; outside it the customer can order pickup.
 - **Delivery areas and availability** (5 Nov 2026, designed in the prototypes; backend to follow):
-  - **Admin, service areas:** areas Send Koro operates in (e.g. Brooklyn, Queens, Manhattan), each with a longest-delivery limit (default 5 mi), open/closed, and a bad-weather pause that turns delivery off for the whole area (pickup stays open). A "Farther away" label shows beyond 2 mi. If no courier is available, the location shows pickup only.
+  - **Admin, service areas:** areas Send Koro operates in (e.g. Brooklyn, Queens, Manhattan), each with a longest-delivery limit (default 5 mi), open/closed, and a bad-weather pause that turns delivery off for the whole area (pickup stays open). If no courier is available, the location shows pickup only.
   - **Restaurant, per location:** delivery on/off and pickup on/off; delivery area as up to 3 distance rings (each with its own minimum order and extra minutes) or a list of ZIP codes, never beyond the area limit; delivery hours = opening hours or stop N minutes before closing; pause delivery only (30 min, 1 hour, rest of today).
-  - **Customer:** the delivery fee grows with distance (courier quote + markup); listings show distance, delivery fee, minimum order, "Farther away", "Pickup only", "Delivery paused right now" or "Closed · opens …". Checkout blocks delivery below the ring's minimum and offers pickup.
+  - **Customer:** no distances are shown anywhere (6 Nov 2026), because they confuse people. The delivery area is set by the restaurant within the admin limit. When a customer opens a location that can't deliver to their address (outside its area, delivery paused, or no courier), the Delivery button is switched off and only Pickup can be chosen; their delivery choice comes back on other restaurants. Listings say "Delivers to you", "Pickup only for your address", "Delivery paused right now" or "Closed · opens …", with the restaurant's minimum order where one applies. The delivery fee still follows distance behind the scenes (courier quote + markup). Checkout blocks delivery below the minimum and offers pickup.
   - No small-order fee and no Send Koro busy-time surcharge; minimums are the restaurant's choice.
 
 - **Providers:**
