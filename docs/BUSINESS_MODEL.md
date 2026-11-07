@@ -95,6 +95,24 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 - **NYC minimum pay:** $22.13 per hour of trip time (standard method; $36.88 under the alternative method). If actual trip time pushes pay below that, the shortfall is added to the weekly payout automatically. Locked pay cannot remove this legal check. Built: every Monday 06:00 ET the API totals last week's trips and the payments service transfers any shortfall once per driver per week.
 - **Tips:** 100% to the driver, never used to meet the minimum, never reduced.
 - **Payouts:** weekly on Mondays to the driver's own Stripe account. Instant payouts are off at launch.
+- **Driver onboarding, minimum requirements only** (7 Nov 2026, designed in the driver app prototype; backend to follow):
+  - **Applying:**
+    - Legal name, email, date of birth (18+).
+    - Vehicle: bike, e-bike (UL-certified, required in NYC), moped or car. Mopeds and cars also need a driver's license with its expiry, insurance that covers delivery, and a plate.
+    - Photo ID, plus license and insurance photos for mopeds and cars.
+    - Independent contractor agreement.
+    - Background check disclosure and authorization (FCRA), covering identity, SSN trace and, for mopeds and cars, the driving record.
+    - Stripe account. Stripe verifies identity and bank and collects tax details like a W-9.
+  - **NYC Fair Chance Act order:** first checks, then a conditional offer, then a separate authorization for the criminal history check (with the FCRA summary and NY Correction Law Article 23-A). If something comes up, the driver gets a Fair Chance notice with the report, the written Article 23-A assessment and at least 5 business days to respond, and a person reviews the response.
+  - **Before the first delivery:** the driver confirms the NYC Notice of Rights (also emailed and texted) and, for e-bikes and mopeds, the lithium-ion battery safety sheet (Local Law 41 of 2023), and sets their delivery limits. A free insulated bag is sent after the 6th delivery.
+  - **NYC delivery worker rights in the app:**
+    - Limits: the driver sets the farthest restaurant-to-customer distance (1, 2, 3 or 5 mi) and whether to cross bridges and tunnels. Offers outside these limits aren't sent.
+    - Before accepting, the offer shows pickup, distance, time, pay, tip and any bridge or tunnel.
+    - Daily statements show each tip and the day's pay and tips.
+    - Restroom access is shown at pickup.
+    - The Notice of Rights page sits under Account.
+  - **Taxes:** Send Koro is the payer and issues a **1099-NEC** to each driver paid $2,000 or more in the year (2026 threshold). It covers locked pay, tips and NYC top-ups and is filed through Stripe's 1099 product. Stripe doesn't issue 1099-Ks to drivers, because they take no card payments.
+  - **To confirm with counsel and a broker:** contractor classification in NY (Matter of Vega, 2020), and insurance (occupational accident cover, contingent auto liability, general liability).
 
 ## Processing fees on delivery money (3 Nov 2026)
 
