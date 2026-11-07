@@ -1,4 +1,8 @@
 /**
+ * FALLBACK ONLY since 7 Nov 2026: own-driver pay is now each order's delivery fee minus the card
+ * share and payout cost (= courier price P; see core/batching.ts). This rate card is used only when
+ * an order has no stored courier price. NYC minimum-pay logic below is unchanged and always applies.
+ *
  * Own-driver pay (BUSINESS_MODEL.md §Own drivers). Upfront and locked: what the offer shows is
  * what the driver is paid, never reduced for traffic or delays, and no fees are deducted (rule 6).
  *

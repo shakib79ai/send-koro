@@ -98,6 +98,14 @@ describe('batching', () => {
     expect(plan.payPerOrder.a + plan.payPerOrder.b).toBe(plan.payCents);
     expect(planOffers([a, b])).toHaveLength(1);
   });
+  it('pays the driver each order’s delivery fee minus card share and payout cost (P), tip on top', () => {
+    const a = { orderId: 'a', pickup, dropoff: { lat: 40.7484, lng: -73.9857 }, driverPayCents: 780 }; // fee 848 − card 39 − payout 29
+    const b = { orderId: 'b', pickup, dropoff: { lat: 40.7505, lng: -73.9934 }, driverPayCents: 650 };
+    expect(planOffers([{ ...a, dropoff: { lat: 40.7033, lng: -74.0170 } }])[0]).toMatchObject({ payCents: 780, payPerOrder: { a: 780 } });
+    const plan = planPair(a, b)!;
+    expect(plan.payCents).toBe(1430);
+    expect(plan.payPerOrder).toEqual({ a: 780, b: 650 });
+  });
   it('does not pair far-apart dropoffs', () => {
     const a = { orderId: 'a', pickup, dropoff: { lat: 40.7484, lng: -73.9857 } };
     const c = { orderId: 'c', pickup, dropoff: { lat: 40.7033, lng: -74.0170 } }; // Battery Park

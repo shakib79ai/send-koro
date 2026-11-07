@@ -89,8 +89,11 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 
 - **Connected Stripe accounts set up like restaurants** (3 Nov 2026): full Dashboard; Stripe collects fees and covers losses; recipient configuration for weekly transfers. Needs Stripe's written confirmation.
 - **No driver subscription and no fees charged to drivers** (decided 29 Oct, confirmed 3 Nov 2026).
-- **Rate card:** $2.50 pickup + $0.45 per minute + $0.75 per mile. Example: 2.0 mi and 18 min = **$12.10**.
-- **Two orders on one route** (batching) like Uber and DoorDash. Example: 2.8 mi and 24 min = **$15.40** for both. Each order is still paid fairly.
+- **Driver pay (7 Nov 2026; replaces the rate card):** each order pays the driver **the delivery fee minus the card-fee share and the payout cost**, which is exactly the courier price P the fee was built from (D = P + payout + card share). Customers and restaurants see D. The driver sees only their pay, never D, the card fee or the payout cost, and no fee lines appear on driver statements.
+  - Example: delivery fee **$8.48** − card share 39¢ − payout 29¢ = **$7.80** locked pay, plus 100% of the $5.40 tip.
+  - **Two orders on one route** (batching) like Uber and DoorDash: the driver gets each order's own amount, e.g. $7.80 + $6.50 = $14.30.
+  - The old rate card ($2.50 + 45¢/min + 75¢/mi) is kept only as a fallback for an order with no stored courier price.
+  - Send Koro breaks even on own-driver delivery money, the same as on third-party deliveries.
 - **Upfront, locked pay:** before accepting, the driver sees distance, total time and pay. Pay **never goes down** for traffic or delays.
 - **NYC minimum pay:** $22.13 per hour of trip time (standard method; $36.88 under the alternative method). If actual trip time pushes pay below that, the shortfall is added to the weekly payout automatically. Locked pay cannot remove this legal check. Built: every Monday 06:00 ET the API totals last week's trips and the payments service transfers any shortfall once per driver per week.
 - **Tips:** 100% to the driver, never used to meet the minimum, never reduced.
@@ -119,7 +122,7 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 - The delivery money pays its own share of Stripe's processing fee: **share = fee × (customer delivery contribution + tip) ÷ order total**.
 - It is settled by lowering the application fee, so restaurants don't pay processing on delivery.
 - **The fee share is never taken from a driver's pay or tip.** It comes out of Send Koro's delivery margin, for own drivers and third-party couriers alike.
-- **Known cost:** about 33¢ on a $39 order with a $5 customer delivery fee and a $4 tip. Single own-driver orders already pay the driver more than the $7.80 delivery price; batching roughly breaks even.
+- **Known cost:** about 33¢ on a $39 order with a $5 customer delivery fee and a $4 tip. Now covered by the delivery markup, and own-driver pay equals the courier price, so own-driver deliveries break even.
 - **Recommended, not built yet:** add the fee share to the delivery price at quote time.
 
 ## Stripe configuration

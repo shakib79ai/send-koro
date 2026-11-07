@@ -137,7 +137,7 @@ export class DispatchService {
       if (onOffer.has(o.id)) continue;
       const loc = await this.location(o.locationId);
       const drop = o.dropoff as { lat: number; lng: number };
-      pending.push({ orderId: o.id, pickup: loc, dropoff: drop, readyAt: o.readyAt, locationId: o.locationId });
+      pending.push({ orderId: o.id, pickup: loc, dropoff: drop, readyAt: o.readyAt, locationId: o.locationId, driverPayCents: (o.deliveryQuote as { feeCents?: number } | null)?.feeCents ?? null });
     }
 
     let offered = 0;

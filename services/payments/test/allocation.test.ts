@@ -158,6 +158,15 @@ describe('delivery markup: card + payout fees (5 Nov 2026)', () => {
     expect(applicationFeeAfterShare(p.allocation, estimateStripeFee(p.allocation.Q, fee))).toBe(780 + 540 + 29);
   });
 
+  it('driver pay = delivery fee − card share − payout cost = courier price (worked example $8.48 → $7.80)', () => {
+    const p = priceDelivery({ ...order, courierCents: 780 }, fee, { bps: 25, fixedCents: 25 });
+    expect(p.allocation.D - p.cardMarkupCents - p.payoutMarkupCents).toBe(780); // 848 − 39 − 29
+    for (const P of [450, 650, 780, 1290]) for (const tip of [0, 540, 1500]) {
+      const q = priceDelivery({ ...order, tipCents: tip, courierCents: P }, fee, { bps: 25, fixedCents: 25 });
+      expect(q.allocation.D - q.cardMarkupCents - q.payoutMarkupCents).toBe(P);
+    }
+  });
+
   it('never leaves Send Koro short, across rules, tips and courier prices', () => {
     const rules: DeliveryConsent['rule'][] = [{ kind: 'customer_pays' }, { kind: 'restaurant_pays' }, { kind: 'split_percent', restaurantBps: 5000 }, { kind: 'split_fixed', restaurantCents: 300 }, { kind: 'free_above', minFoodCents: 2500 }];
     for (const r of rules) for (const tip of [0, 199, 540, 1500]) for (const P of [450, 780, 1290]) for (const F of [900, 3000, 12000]) {

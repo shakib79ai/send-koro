@@ -280,6 +280,9 @@ describe('own drivers: locked offers, batching, pay', () => {
     expect(offer.distanceMeters).toBeGreaterThan(0);
     expect(offer.durationSeconds).toBeGreaterThan(0);
     expect(offer.payCents).toBeGreaterThanOrEqual(250);
+    // Locked pay = delivery fee − card share − payout cost = the courier price frozen at checkout.
+    const placed = await app.state.load(orderId);
+    expect(offer.payCents).toBe((placed.deliveryQuote as { feeCents: number }).feeCents);
     expect(app.uber.calls.filter((c) => c.op === 'create')).toHaveLength(0);
     // Drivers see only their own locked pay: never the customer's delivery fee, the markup or the courier quote.
     expect(JSON.stringify(offer)).not.toMatch(/markup|courierCents|providerQuote|feeCents|deliveryCents|uber|doordash/i);

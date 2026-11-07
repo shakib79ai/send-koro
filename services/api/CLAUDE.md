@@ -6,7 +6,7 @@ Everything the apps talk to: sign-in, restaurants, menus, ordering, dispatch, dr
 
 | Path | What it does |
 |---|---|
-| `src/core/` | **Pure logic, no I/O.** `cart.ts` (food, restaurant fees, restaurant tax in ppm), `receipt.ts` (customer lines; must equal the charged total), `rate-card.ts` (locked driver pay, batch split, NYC minimum), `batching.ts` (2 orders on one route), `order-status.ts`, `hours.ts`, `tax.ts` (launch states), `geo.ts`, `money.ts` |
+| `src/core/` | **Pure logic, no I/O.** `cart.ts` (food, restaurant fees, restaurant tax in ppm), `receipt.ts` (customer lines; must equal the charged total), `batching.ts` (2 orders on one route; driver pay = each order's delivery fee − card share − payout cost = courier price P), `rate-card.ts` (fallback pay, NYC minimum), `order-status.ts`, `hours.ts`, `tax.ts` (launch states), `geo.ts`, `money.ts` |
 | `src/auth/` | Phone code sign-in, JWT access + rotating refresh tokens, global `AuthGuard`, `@Roles()`, `@Public()` |
 | `src/restaurants/` | Profile, locations, hours, team, taxes & fees, delivery-fee rule (sent to payments as a versioned consent), go-live checklist |
 | `src/menu/`, `src/catalog/` | Menu editor; public browsing |
