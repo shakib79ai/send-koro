@@ -281,6 +281,8 @@ describe('own drivers: locked offers, batching, pay', () => {
     expect(offer.durationSeconds).toBeGreaterThan(0);
     expect(offer.payCents).toBeGreaterThanOrEqual(250);
     expect(app.uber.calls.filter((c) => c.op === 'create')).toHaveLength(0);
+    // Drivers see only their own locked pay: never the customer's delivery fee, the markup or the courier quote.
+    expect(JSON.stringify(offer)).not.toMatch(/markup|courierCents|providerQuote|feeCents|deliveryCents|uber|doordash/i);
 
     await app.drivers.acceptOffer(u, offer.id);
     await expect(app.drivers.acceptOffer(u, offer.id)).rejects.toMatchObject({ code: 'offer_gone' });
@@ -296,6 +298,7 @@ describe('own drivers: locked offers, batching, pay', () => {
     expect(app.fake.callsTo('ownDriverDelivered')).toEqual([{ method: 'ownDriverDelivered', args: [paymentsOrderId, d.id, offer.payCents] }]);
     const week = await app.drivers.earnings(u);
     expect(week).toMatchObject({ trips: 1, payCents: offer.payCents, tipsCents: 400 });
+    expect(JSON.stringify(week)).not.toMatch(/markup|courierCents|providerQuote|feeCents|deliveryCents/i);
   });
 
   it('two orders from the same restaurant to nearby addresses become one offer', async () => {
