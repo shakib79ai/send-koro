@@ -70,6 +70,10 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
   - **Restaurant, per location:** delivery on/off and pickup on/off; delivery area as up to 3 distance rings (each with its own minimum order and extra minutes) or a list of ZIP codes, never beyond the area limit; delivery hours = opening hours or stop N minutes before closing; pause delivery only (30 min, 1 hour, rest of today).
   - **Customer:** no distances are shown anywhere (6 Nov 2026), because they confuse people. The delivery area is set by the restaurant within the admin limit. When a customer opens a location that can't deliver to their address (outside its area, delivery paused, or no courier), the Delivery button is switched off and only Pickup can be chosen; their delivery choice comes back on other restaurants. Listings say "Delivers to you", "Pickup only for your address", "Delivery paused right now" or "Closed · opens …", with the restaurant's minimum order where one applies. The delivery fee still follows distance behind the scenes (courier quote + markup). Checkout blocks delivery below the minimum and offers pickup.
   - No small-order fee and no Send Koro busy-time surcharge; minimums are the restaurant's choice.
+- **Drop-off choice** (6 Nov 2026, designed in the prototypes; backend to follow). The customer picks at checkout and can change it until the courier picks up:
+  - **Leave at my door:** the courier must take a photo of the order at the door, and the customer sees it on the tracking page.
+  - **Hand it to me:** each order gets a 4-digit PIN, shown to the customer on the order-placed and tracking screens. The courier must enter it to complete the delivery. If the customer can't find it, support texts it to them.
+  - The driver sees the method on the offer and at drop-off.
 
 - **Providers:**
   - Uber Direct: primary.
