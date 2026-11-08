@@ -47,6 +47,16 @@ This is the source of truth for product and money rules. Where it differs from `
   - Each must be shown on the menu and in the cart before payment.
   - In NY a service charge is taxable.
   - A mandatory gratuity is untaxed only if it is listed separately, labelled "gratuity", and paid 100% to staff.
+- **Menu editor** (8 Nov 2026, modelled on Uber Eats Menu Maker and the DoorDash Merchant Portal; designed in the prototypes, backend to follow):
+  - **Menus with hours:** e.g. "All day" and "Lunch specials" (days + from/to). Sections belong to one or more menus; a dish shows only while one of its menus and the location are open. Sections have a name, optional description and an order.
+  - **Item:** photo (16:9, at least 1400 × 800), name, description, price, optional pickup price, section, "Popular" flag, dietary/allergen labels (vegetarian, vegan, gluten-free, halal, spicy, contains nuts, contains dairy), calories (number or range; NYC requires them for chains with 15+ locations), sales tax (taxable at the location's rate or not taxable; the restaurant decides and files), availability (available / sold out today / sold out until turned back on), optional item-only days and times, per-location price and sold-out (unchanged).
+  - **Option groups:** name, pick at least (0 = optional), pick up to, number of free choices (the cheapest picks are free), most of each choice; each choice has an extra price, "selected by default" and in/out of stock. Groups can be copied from another dish.
+- **Promotions** (8 Nov 2026; designed in the prototypes, backend to follow). Types, as on Uber Eats and DoorDash: buy 1 get 1 free, discount on items (% or $), free item with a minimum order, spend $X save $Y, percent off the order (optional cap), free delivery over a minimum.
+  - Settings: customers (all, new, returning, haven't ordered in 30 days), locations, once per customer, start date, end date or ongoing, whenever open or certain days/times (happy hour, lunch special), optional weekly budget (pauses until Monday when reached), pause/resume/end, results (orders, food sales, discount paid).
+  - **The restaurant funds 100% of the discount. Send Koro charges nothing to run a promotion** (no marketing fee, no commission). Food discounts lower the food price (F), so they lower card processing on food and the net food sales the monthly plan is based on. Sales tax is charged on the price after the restaurant's discount.
+  - One promotion per order: if several apply, the customer gets the one that saves the most. The cart shows "{Restaurant} offer −$X".
+  - Free delivery is the restaurant paying the delivery fee as its delivery share, so the proposed NYC 15% cap applies; when it binds the customer sees "$X off delivery" instead of "Free delivery".
+  - Example, BOGO on a $15.00 bowl: 2 bowls + $4.50 lemonade = $34.50 → offer −$15.00 → food $19.50, tax 8.875% = $1.73. Cost to the restaurant $15.00. Free delivery over $25 on $32.50 food: fee $8.48, restaurant pays $4.87 (15%), customer pays $3.61.
 - **Order acceptance:** the card is authorised at checkout and charged only when the restaurant accepts. Unanswered orders are declined and released after 5 minutes.
 
 ## Delivery fee (who pays)
