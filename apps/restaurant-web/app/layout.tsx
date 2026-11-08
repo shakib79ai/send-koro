@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   applicationName: 'Send Koro Restaurants',
   appleWebApp: { capable: true, title: 'SK Restaurants', statusBarStyle: 'black-translucent' },
-  icons: { icon: '/icons/icon-192.png', apple: '/icons/apple-touch-icon.png' },
+  icons: { icon: [{ url: '/favicon.ico', sizes: '48x48' }, { url: '/favicon.svg', type: 'image/svg+xml' }], apple: '/icons/apple-touch-icon.png' },
 };
-export const viewport: Viewport = { themeColor: '#0E0F12', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
+export const viewport: Viewport = { themeColor: '#0B3B6E', width: 'device-width', initialScale: 1, viewportFit: 'cover' };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

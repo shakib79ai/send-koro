@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { usePortal } from '@/lib/portal';
+import { BrandLogo } from './BrandLogo';
 
 const NAV: { section?: string; href: string; label: string; icon: string }[] = [
   { href: '/', label: 'Live orders', icon: '◉' },
@@ -38,7 +39,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="shell">
       <aside className="side">
-        <span className="logo">send<b>koro</b></span>
+        <BrandLogo tone="reversed" height={30} />
         <span className="for">FOR RESTAURANTS</span>
         {restaurants.length > 1 ? (
           <select value={restaurant.id} onChange={(e) => select(e.target.value)} aria-label="Restaurant">{restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
@@ -55,7 +56,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
       <div style={{ minWidth: 0 }}>
         <div className="mobile-top">
-          <span className="logo">send<b>koro</b></span>
+          <BrandLogo tone="reversed" height={30} />
           {restaurants.length > 1 ? <select value={restaurant.id} onChange={(e) => select(e.target.value)}>{restaurants.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select> : <b className="small">{restaurant.name}</b>}
         </div>
         <div className="page">{children}</div>

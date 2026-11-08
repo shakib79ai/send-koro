@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { api, ApiError, saveSession, Session } from '@/lib/api';
+import { BrandLogo } from '@/components/BrandLogo';
 
 const toE164 = (p: string) => { const d = p.replace(/\D/g, ''); return d.length === 10 ? `+1${d}` : d.length === 11 && d.startsWith('1') ? `+${d}` : ''; };
 
@@ -18,7 +19,7 @@ export default function SignIn() {
   return (
     <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 16, background: 'var(--ink)' }}>
       <div className="card pad stack" style={{ width: '100%', maxWidth: 420 }}>
-        <div><span className="logo">send<b>koro</b></span><div className="tiny bold" style={{ color: 'var(--orange)', letterSpacing: '.14em' }}>ADMIN</div></div>
+        <div><BrandLogo height={34} /><div className="tiny bold" style={{ color: 'var(--orange)', letterSpacing: '.14em' }}>ADMIN</div></div>
         <h1 style={{ fontSize: 26 }}>{sent ? 'Enter the code' : 'Admin sign in'}</h1>
         {!sent ? (<>
           <p className="small muted" style={{ margin: 0 }}>Admins are added by another admin (or with the create-admin command on the server).</p>

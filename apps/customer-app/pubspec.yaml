@@ -19,6 +19,16 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
+
+# App icon (Send Koro brand kit v1). Applied by tool/bootstrap.sh, or run: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/icon/app-icon-1024.png
+  remove_alpha_ios: true
+  adaptive_icon_background: "#EEF3F8"
+  adaptive_icon_foreground: assets/icon/adaptive-foreground.png

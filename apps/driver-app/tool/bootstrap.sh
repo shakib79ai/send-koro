@@ -46,3 +46,10 @@ ps = re.sub(r'(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)', r'\1
 p.write_text(ps)
 print('Platform folders ready: android/ and ios/ with location permissions.')
 PY
+
+# App icon from the brand kit (assets/icon). Never fails the bootstrap: a missing package only skips the icon.
+if flutter pub get >/dev/null 2>&1 && dart run flutter_launcher_icons >/dev/null 2>&1; then
+  echo 'App icon set (assets/icon).'
+else
+  echo 'Note: app icon not applied; run "dart run flutter_launcher_icons" after "flutter pub get".'
+fi

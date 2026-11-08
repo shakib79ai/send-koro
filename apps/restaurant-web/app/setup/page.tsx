@@ -11,6 +11,7 @@ import { HoursEditor } from '@/components/HoursEditor';
 import { TaxForm } from '@/components/TaxForm';
 import { DeliveryFeeForm } from '@/components/DeliveryFeeForm';
 import { useAction } from '@/components/ui';
+import { BrandLogo } from '@/components/BrandLogo';
 
 export default function Setup() {
   const { session, ready, restaurant, reload, select, signOut } = usePortal();
@@ -34,7 +35,7 @@ export default function Setup() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
-      <div className="mobile-top" style={{ display: 'flex' }}><span className="logo">send<b>koro</b></span>{restaurant?.status === 'live' ? <Link className="btn sm" href="/">Go to live orders</Link> : <button className="btn sm" onClick={signOut}>Sign out</button>}</div>
+      <div className="mobile-top" style={{ display: 'flex' }}><BrandLogo tone="reversed" height={28} />{restaurant?.status === 'live' ? <Link className="btn sm" href="/">Go to live orders</Link> : <button className="btn sm" onClick={signOut}>Sign out</button>}</div>
       <div className="container" style={{ maxWidth: 900, paddingTop: 28, paddingBottom: 60 }}>
         <h1>List your restaurant. <span style={{ color: 'var(--orange)' }}>Keep every dollar</span> of food sales.</h1>
         <p className="muted">Flat monthly plan from $50, first month free. Takes about 10 minutes. Have ready: your NYS Sales Tax Certificate of Authority, NYC Health permit and bank details (Stripe asks for your EIN and identity on its secure pages).</p>

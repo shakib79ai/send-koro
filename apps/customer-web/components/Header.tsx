@@ -5,9 +5,10 @@ import { useSession } from '@/lib/session';
 import { useCart } from '@/lib/cart';
 import { AddressSheet } from './AddressSheet';
 import { CartSheet } from './CartSheet';
+import { BrandLogo } from './BrandLogo';
 
 export function Logo() {
-  return <span className="logo">send<b>koro</b></span>;
+  return <BrandLogo height={34} />;
 }
 
 export function Header() {

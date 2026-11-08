@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'brand_mark.dart';
 
 class ErrorBanner extends StatelessWidget {
   const ErrorBanner({super.key, required this.message, this.onClose});
@@ -22,10 +23,17 @@ class Logo extends StatelessWidget {
   final bool light;
   final double size;
   @override
-  Widget build(BuildContext context) => Text.rich(TextSpan(children: [
-        TextSpan(text: 'send', style: TextStyle(color: light ? Colors.white : SK.ink)),
-        const TextSpan(text: 'koro', style: TextStyle(color: SK.orange)),
-      ]), style: TextStyle(fontSize: size, fontWeight: FontWeight.w800, letterSpacing: -0.8));
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+        BrandMark(size: size * 1.5, light: light),
+        SizedBox(width: size * 0.35),
+        Text.rich(
+          TextSpan(children: [
+            TextSpan(text: 'Send ', style: TextStyle(color: light ? Colors.white : BrandColors.navy)),
+            const TextSpan(text: 'Koro', style: TextStyle(color: BrandColors.red)),
+          ]),
+          style: TextStyle(fontSize: size, fontWeight: FontWeight.w900, fontStyle: FontStyle.italic, letterSpacing: -0.4),
+        ),
+      ]);
 }
 
 class StatRow extends StatelessWidget {

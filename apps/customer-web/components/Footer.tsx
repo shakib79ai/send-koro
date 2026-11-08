@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Logo } from './Header';
+import { BrandLogo } from './BrandLogo';
 
 export function Footer() {
   return (
@@ -9,7 +9,7 @@ export function Footer() {
       <div className="container">
         <div className="cols">
           <div className="stack">
-            <Logo />
+            <BrandLogo tone="reversed" height={34} />
             <p className="small" style={{ maxWidth: 360 }}>Own a restaurant? Flat plans from $50 a month, first month free, and you keep 100% of food sales.</p>
             <a className="link" href={process.env.NEXT_PUBLIC_RESTAURANT_URL ?? 'https://restaurants.sendkoro.com'}>List your restaurant →</a>
           </div>

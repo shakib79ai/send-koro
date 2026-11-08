@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useAdmin } from '@/lib/admin';
+import { BrandLogo } from './BrandLogo';
 
 const NAV: { section?: string; href: string; label: string; icon: string }[] = [
   { href: '/', label: 'Operations', icon: '◉' },
@@ -28,7 +29,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="shell">
       <aside className="side">
-        <span className="logo">send<b>koro</b></span>
+        <BrandLogo tone="reversed" height={30} />
         <span className="for">ADMIN</span>
         {NAV.map((n) => (
           <div key={n.href}>
@@ -40,7 +41,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <button className="btn sm" style={{ background: 'transparent', color: '#c9cbd1', borderColor: '#2a2d34', marginTop: 8 }} onClick={async () => { await signOut(); router.replace('/sign-in'); }}>Sign out</button>
       </aside>
       <div style={{ minWidth: 0 }}>
-        <div className="mobile-top"><span className="logo">send<b>koro</b> admin</span><select onChange={(e) => router.push(e.target.value)} value={NAV.find((n) => on(n.href))?.href}>{NAV.map((n) => <option key={n.href} value={n.href}>{n.label}</option>)}</select></div>
+        <div className="mobile-top"><BrandLogo tone="reversed" height={26} label="Admin" /><select onChange={(e) => router.push(e.target.value)} value={NAV.find((n) => on(n.href))?.href}>{NAV.map((n) => <option key={n.href} value={n.href}>{n.label}</option>)}</select></div>
         <div className="page">{children}</div>
       </div>
     </div>
