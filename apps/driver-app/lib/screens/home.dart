@@ -146,7 +146,7 @@ class _OfferCardState extends State<OfferCard> {
           Row(children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: const Color(0xFFFFF1E3), borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(color: const Color(0xFFEAF1F8), borderRadius: BorderRadius.circular(999)),
               child: Text(o.isBatch ? '2 orders · one route' : 'New offer', style: const TextStyle(color: SK.orange, fontWeight: FontWeight.w700)),
             ),
             const Spacer(),
@@ -269,11 +269,11 @@ class TripView extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(trip.length > 1 ? '${trip.length} orders on this trip' : 'Current trip', style: const TextStyle(color: Color(0xFFC9CBD1))),
+              Text(trip.length > 1 ? '${trip.length} orders on this trip' : 'Current trip', style: const TextStyle(color: Color(0xFFDCE5EF))),
               Text(usd(pay), style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800)),
             ])),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              const Text('Tips (100% yours)', style: TextStyle(color: Color(0xFFC9CBD1), fontSize: 12)),
+              const Text('Tips (100% yours)', style: TextStyle(color: Color(0xFFDCE5EF), fontSize: 12)),
               Text('+ ${usd(tips)}', style: const TextStyle(color: SK.orange, fontWeight: FontWeight.w800, fontSize: 18)),
             ]),
           ]),

@@ -37,7 +37,7 @@ class _SignInScreenState extends State<SignInScreen> {
           const SizedBox(height: 28),
           const Text('Deliver with Send Koro', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, height: 1.15)),
           const SizedBox(height: 10),
-          const Text('See the pay before you accept — it never goes down. 100% of tips are yours. NYC minimum pay guaranteed.', style: TextStyle(color: Color(0xFFC9CBD1), height: 1.4)),
+          const Text('See the pay before you accept — it never goes down. 100% of tips are yours. NYC minimum pay guaranteed.', style: TextStyle(color: Color(0xFFDCE5EF), height: 1.4)),
           const SizedBox(height: 28),
           Card(
             child: Padding(

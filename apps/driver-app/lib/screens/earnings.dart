@@ -54,10 +54,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
               child: Padding(
                 padding: const EdgeInsets.all(18),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('This week · from ${w.weekStart}', style: const TextStyle(color: Color(0xFFC9CBD1))),
+                  Text('This week · from ${w.weekStart}', style: const TextStyle(color: Color(0xFFDCE5EF))),
                   const SizedBox(height: 4),
                   Text(usd(w.totalCents), style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800)),
-                  Text('${w.trips} trips · ${hours(w.tripSeconds)} on trips', style: const TextStyle(color: Color(0xFFC9CBD1))),
+                  Text('${w.trips} trips · ${hours(w.tripSeconds)} on trips', style: const TextStyle(color: Color(0xFFDCE5EF))),
                 ]),
               ),
             ),

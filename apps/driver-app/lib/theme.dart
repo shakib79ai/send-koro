@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
 
-/// Saffron & Ink (docs/BUSINESS_MODEL.md): orange #FF7A00, ink #0E0F12, paper #F7F7F5.
+/// Send Koro navy theme (approved Nov 2026): navy #0B3B6E, red #E3242B, white, light blues only.
+/// `orange` keeps its name for the main action colour so screens don't change; it is now red.
 class SK {
-  static const orange = Color(0xFFFF7A00);
-  static const ink = Color(0xFF0E0F12);
-  static const paper = Color(0xFFF7F7F5);
-  static const green = Color(0xFF138A52);
-  static const red = Color(0xFFC8372D);
-  static const muted = Color(0xFF6B6F78);
-  static const line = Color(0xFFE7E6E1);
+  static const navy = Color(0xFF0B3B6E);
+  static const navyDark = Color(0xFF082D55);
+  static const orange = Color(0xFFE3242B); // primary action (red)
+  static const ink = navy; // app bars, headings
+  static const paper = Color(0xFFEEF3F8);
+  static const green = navy; // success / online states stay inside the palette
+  static const red = Color(0xFFC81E24);
+  static const muted = Color(0xFF5B6B80);
+  static const line = Color(0xFFDCE5EF);
+  static const onNavyMuted = Color(0xFFDCE5EF);
 
   static ThemeData theme() {
-    final scheme = ColorScheme.fromSeed(seedColor: orange, primary: orange, surface: Colors.white);
+    final scheme = ColorScheme.fromSeed(seedColor: navy, primary: orange, secondary: navy, error: red, surface: Colors.white);
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
