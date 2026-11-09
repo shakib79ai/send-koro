@@ -4,6 +4,7 @@ NYC food-delivery marketplace. Restaurants pay a flat monthly plan and **$0 comm
 
 Read before changing anything money-related:
 - `docs/BUSINESS_MODEL.md` — every business decision to date. **It overrides the brief where they differ.**
+- `docs/payments/` — **payments developer documents**: money model, Stripe Connect setup, catalog and subscriptions, driver and courier pay, credit/referral/wallet, and a step-by-step runbook for Claude Code. Start with `docs/payments/README.md`.
 - `docs/STRIPE_TECHNICAL_BRIEF.md` — the Stripe developer brief (v1.2) the payments service implements.
 - `docs/DESIGNS.md` — links to the approved screen designs for every app.
 - `docs/API.md` — the core API the apps call. `docs/DEPLOYMENT.md` — server, CI/CD, going live.
