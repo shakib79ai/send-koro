@@ -156,6 +156,15 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 | Stripe Tax | Off for orders (restaurants handle tax) |
 | Payment methods | Cards, Apple Pay, Google Pay, Link; domain `sendkoro.com` |
 
+### Stripe tab in the apps (9 Nov 2026)
+
+- **Restaurant portal → Stripe** (owner only): setup state and what Stripe still needs, balance, payout schedule, bank (last 4), recent payouts, plus Stripe's Connect embedded components: Payments, Payouts, Statements & tax forms (1099-K), Account & bank (onboarding until active, then account management), and Stripe's notification banner.
+  - The embedded payments list has **refunds and capture turned off**: refunds go through Send Koro's order screen so the application fee is refunded correctly, and capture happens when the restaurant accepts. Restaurants may answer disputes on their own direct charges.
+- **Driver app → Stripe tab:** setup state, balance, payout schedule, bank, weekly statements (locked pay + 100% of tips + NYC top-ups, never any fee lines), recent payouts, and "Open Stripe Dashboard" for bank changes and the 1099-NEC.
+- **Instant payouts stay off** in both apps at launch.
+- Both account types have the full Stripe Dashboard, so Stripe asks the user to sign in to Stripe for sensitive changes (bank, payout schedule). This can't be switched off for these accounts.
+- **Note:** driver money reaches the driver's Stripe balance after each delivery (one transfer per order), and NYC top-ups on Monday; Stripe then pays the bank on the account's own payout schedule. "Weekly on Mondays" below describes top-ups, not a forced payout schedule, because platforms can't set the schedule on full-Dashboard accounts.
+
 Platform account from the brief: `acct_1UVa9IQzpvBKCndf`. Support contact info@shlglobal.biz, +1 917-624-8233. Website https://sendkoro.com.
 
 ## Open decisions

@@ -92,7 +92,7 @@ class _StripeScreenState extends State<StripeScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(children: [
                   StatRow('Available in Stripe', x.availableCents == null ? '—' : usd(x.availableCents!)),
-                  StatRow('On the way', x.pendingCents == null ? '—' : usd(x.pendingCents!)),
+                  StatRow('On the way to your bank', x.pendingCents == null ? '—' : usd(x.pendingCents!)),
                   const Divider(),
                   StatRow('Payout schedule', x.payoutSchedule ?? '—'),
                   StatRow('Bank', x.bankLast4 == null ? (x.stripeAccountId == null ? '—' : 'In your Stripe account') : '${x.bankName ?? 'Bank'} •••• ${x.bankLast4}'),
@@ -100,7 +100,7 @@ class _StripeScreenState extends State<StripeScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            const Text('Send Koro sends your pay to Stripe every Monday. Stripe then pays your bank on the schedule above. No fees are taken from your pay or tips.', style: TextStyle(color: SK.muted, fontSize: 13)),
+            const Text('Your locked pay and 100% of your tip reach your Stripe balance after each delivery; any NYC minimum top-up comes on Monday. Stripe then pays your bank on the schedule above. No fees are taken from your pay or tips.', style: TextStyle(color: SK.muted, fontSize: 13)),
             const SizedBox(height: 20),
             const Text('Weekly statements', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             const SizedBox(height: 8),
