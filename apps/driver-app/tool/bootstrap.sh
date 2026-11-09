@@ -13,7 +13,7 @@ import re, pathlib
 # ── Android ──
 m = pathlib.Path('android/app/src/main/AndroidManifest.xml')
 s = m.read_text()
-perms = ['android.permission.INTERNET', 'android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION']
+perms = ['android.permission.INTERNET', 'android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION', 'android.permission.VIBRATE']
 for p in perms:
     if p not in s:
         s = s.replace('<application', f'<uses-permission android:name="{p}" />\n    <application', 1)

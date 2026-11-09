@@ -6,12 +6,15 @@ import 'package:geolocator/geolocator.dart';
 import '../api/api_client.dart';
 import '../api/models.dart';
 import '../config.dart';
+import '../util/offer_alert.dart';
 
 /// Everything the driver screens show: profile, online status, the current offer and trip.
 /// Polls the API while online (offers every few seconds, trip less often) and sends location.
 class DriverState extends ChangeNotifier {
-  DriverState(this.api);
+  DriverState(this.api, {OfferAlert? alert}) : alert = alert ?? OfferAlert();
   final ApiClient api;
+  /// Rings and vibrates while an offer is waiting for the driver.
+  final OfferAlert alert;
 
   DriverProfile? profile;
   bool loaded = false;
@@ -30,8 +33,22 @@ class DriverState extends ChangeNotifier {
   Offer? get currentOffer => offers.isEmpty ? null : offers.first;
   bool get onTrip => trip.isNotEmpty;
 
+  /// Every change runs through here, so the ring always matches what is on screen:
+  /// an offer waiting (online, no trip) rings; accepting, declining, expiring or going offline stops it.
+  @override
+  void notifyListeners() {
+    final o = currentOffer;
+    if (online && !onTrip && o != null) {
+      alert.start(o.id);
+    } else {
+      alert.stop();
+    }
+    super.notifyListeners();
+  }
+
   Future<void> start() async {
     await api.load();
+    await alert.load();
     api.onSignedOut = () {
       _stopOnline();
       profile = null;
@@ -219,6 +236,7 @@ class DriverState extends ChangeNotifier {
   @override
   void dispose() {
     _stopOnline();
+    alert.stop();
     super.dispose();
   }
 }

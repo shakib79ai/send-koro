@@ -40,6 +40,34 @@ class AccountScreen extends StatelessWidget {
           ]),
         ),
         const SizedBox(height: 12),
+        ListenableBuilder(
+          listenable: s.alert,
+          builder: (context, _) => Card(
+            child: Column(children: [
+              SwitchListTile(
+                secondary: const Icon(Icons.notifications_active_outlined),
+                title: const Text('Sound for new offers'),
+                value: s.alert.sound,
+                onChanged: s.alert.setSound,
+              ),
+              const Divider(height: 1),
+              SwitchListTile(
+                secondary: const Icon(Icons.vibration),
+                title: const Text('Vibrate for new offers'),
+                value: s.alert.vibrate,
+                onChanged: s.alert.setVibrate,
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.play_circle_outline),
+                title: const Text('Play the offer sound'),
+                subtitle: const Text('Rings every 4 seconds until you accept or decline'),
+                onTap: s.alert.test,
+              ),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
         const Card(
           child: Padding(
             padding: EdgeInsets.all(16),
