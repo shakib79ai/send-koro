@@ -172,3 +172,75 @@ class PastDelivery {
         distanceMeters: _int(j['distanceMeters']),
       );
 }
+
+/// Stripe tab: the driver's own Stripe account as Send Koro sees it (no fee lines: drivers pay none).
+class StripeOverview {
+  StripeOverview({required this.stripeAccountId, required this.setup, required this.ready, required this.requirementsDue, required this.payoutSchedule, required this.bankName, required this.bankLast4, required this.availableCents, required this.pendingCents, required this.payouts, required this.statement, required this.error});
+  final String? stripeAccountId;
+  /// not_started, pending, restricted or active.
+  final String setup;
+  final bool ready;
+  final List<String> requirementsDue;
+  final String? payoutSchedule;
+  final String? bankName;
+  final String? bankLast4;
+  final int? availableCents;
+  final int? pendingCents;
+  final List<StripePayout> payouts;
+  final List<StatementWeek> statement;
+  final String? error;
+
+  factory StripeOverview.fromJson(Map<String, dynamic> j) {
+    final bank = (j['bank'] as Map?)?.cast<String, dynamic>();
+    final bal = (j['balance'] as Map?)?.cast<String, dynamic>();
+    return StripeOverview(
+      stripeAccountId: j['stripeAccountId'] as String?,
+      setup: _str(j['setup']),
+      ready: j['ready'] == true,
+      requirementsDue: ((j['requirementsDue'] as List?) ?? const []).map((e) => e.toString()).toList(),
+      payoutSchedule: j['payoutSchedule'] as String?,
+      bankName: bank?['name'] as String?,
+      bankLast4: bank?['last4'] as String?,
+      availableCents: bal == null ? null : _int(bal['availableCents']),
+      pendingCents: bal == null ? null : _int(bal['pendingCents']),
+      payouts: ((j['payouts'] as List?) ?? const []).map((e) => StripePayout.fromJson((e as Map).cast<String, dynamic>())).toList(),
+      statement: ((j['statement'] as List?) ?? const []).map((e) => StatementWeek.fromJson((e as Map).cast<String, dynamic>())).toList(),
+      error: j['error'] as String?,
+    );
+  }
+}
+
+class StripePayout {
+  StripePayout({required this.id, required this.amountCents, required this.status, required this.arrivalDate, required this.failureMessage});
+  final String id;
+  final int amountCents;
+  final String status;
+  final DateTime? arrivalDate;
+  final String? failureMessage;
+  factory StripePayout.fromJson(Map<String, dynamic> j) => StripePayout(
+        id: _str(j['id']),
+        amountCents: _int(j['amountCents']),
+        status: _str(j['status']),
+        arrivalDate: j['arrivalDate'] == null ? null : DateTime.parse(_str(j['arrivalDate'])).toLocal(),
+        failureMessage: j['failureMessage'] as String?,
+      );
+}
+
+/// One Monday-to-Sunday week: locked pay + 100% of tips + NYC minimum top-up.
+class StatementWeek {
+  StatementWeek({required this.weekStart, required this.trips, required this.payCents, required this.tipCents, required this.topUpCents, required this.totalCents});
+  final String weekStart;
+  final int trips;
+  final int payCents;
+  final int tipCents;
+  final int topUpCents;
+  final int totalCents;
+  factory StatementWeek.fromJson(Map<String, dynamic> j) => StatementWeek(
+        weekStart: _str(j['weekStart']),
+        trips: _int(j['trips']),
+        payCents: _int(j['payCents']),
+        tipCents: _int(j['tipCents']),
+        topUpCents: _int(j['topUpCents']),
+        totalCents: _int(j['totalCents']),
+      );
+}

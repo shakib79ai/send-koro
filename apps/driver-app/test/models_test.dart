@@ -36,4 +36,23 @@ void main() {
     final s = Session.fromJson({'accessToken': 'a', 'refreshToken': 'r', 'user': {'id': 'u', 'phone': '+19175550400', 'name': null}});
     expect(Session.fromJson(s.toJson()).phone, '+19175550400');
   });
+
+  test('Stripe overview parses setup, schedule, bank, payouts and weekly statements', () {
+    final o = StripeOverview.fromJson({
+      'stripeAccountId': 'acct_1', 'setup': 'active', 'ready': true, 'requirementsDue': <String>[],
+      'payoutSchedule': 'Every day (2 days to arrive)', 'bank': {'name': 'CHASE', 'last4': '4410'},
+      'balance': {'availableCents': 4120, 'pendingCents': 1300},
+      'payouts': [{'id': 'po_1', 'amountCents': 41260, 'status': 'paid', 'arrivalDate': '2026-11-03T00:00:00.000Z', 'method': 'standard', 'failureMessage': null}],
+      'statement': [{'weekStart': '2026-11-02', 'trips': 7, 'payCents': 5900, 'tipCents': 3471, 'topUpCents': 0, 'totalCents': 9371}],
+      'error': null,
+    });
+    expect(o.ready, isTrue);
+    expect(o.bankLast4, '4410');
+    expect(o.availableCents, 4120);
+    expect(o.payouts.single.amountCents, 41260);
+    expect(o.statement.single.totalCents, 9371);
+    final empty = StripeOverview.fromJson({'stripeAccountId': null, 'setup': 'not_started', 'ready': false, 'requirementsDue': <String>[], 'payoutSchedule': null, 'bank': null, 'balance': null, 'payouts': <Object>[], 'error': null});
+    expect(empty.availableCents, isNull);
+    expect(empty.statement, isEmpty);
+  });
 }

@@ -28,6 +28,7 @@ Commit the generated `android/` and `ios/` folders after the first bootstrap, so
 | Almost ready | Stripe payout setup (opens Stripe), approval status, "Check again" |
 | Drive | Online switch. Location is sent while online. **Offer card:** locked pay, distance, total time, stops, 45-second countdown, accept or decline. **Trip:** pick up every order, then deliver; navigate (Google Maps), call, "I'm at the restaurant", "Picked up", "Mark delivered" |
 | Earnings | This week: offer pay, tips (100% yours), NYC minimum top-up, total; how the minimum was checked; recent deliveries |
+| Stripe | Setup state and what Stripe still needs, balance, payout schedule, bank, weekly statements (pay, 100% tips, NYC top-ups; no fee lines), recent payouts, "Open Stripe Dashboard" (bank changes, 1099-NEC) |
 | Account | Profile, Stripe payouts, offer sound, vibration, flash light and screen-blink switches with "Play the offer sound", support, sign out |
 
 ## New-offer alert

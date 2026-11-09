@@ -142,6 +142,8 @@ class ApiClient {
     return (j as Map)['url'].toString();
   }
 
+  Future<StripeOverview> stripeOverview() async => StripeOverview.fromJson(((await _send('GET', '/driver/stripe/overview')) as Map).cast<String, dynamic>());
+
   // ── Online, location, offers, trip ─────────────────────────────────────
   Future<void> setOnline(bool online, {double? lat, double? lng}) =>
       _send('PUT', '/driver/online', body: {'online': online, if (lat != null) 'lat': lat, if (lng != null) 'lng': lng});

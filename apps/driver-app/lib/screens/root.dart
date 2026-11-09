@@ -8,6 +8,7 @@ import 'earnings.dart';
 import 'gate.dart';
 import 'home.dart';
 import 'sign_in.dart';
+import 'stripe.dart';
 
 /// Signed out → sign in. No profile → apply. Not approved or no payouts → gate. Otherwise the app.
 class Root extends StatelessWidget {
@@ -35,7 +36,7 @@ class _ShellState extends State<Shell> {
   int tab = 0;
   @override
   Widget build(BuildContext context) {
-    const pages = [HomeScreen(), EarningsScreen(), AccountScreen()];
+    const pages = [HomeScreen(), EarningsScreen(), StripeScreen(), AccountScreen()];
     return Scaffold(
       body: IndexedStack(index: tab, children: pages),
       bottomNavigationBar: NavigationBar(
@@ -44,6 +45,7 @@ class _ShellState extends State<Shell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.delivery_dining_outlined), selectedIcon: Icon(Icons.delivery_dining), label: 'Drive'),
           NavigationDestination(icon: Icon(Icons.payments_outlined), selectedIcon: Icon(Icons.payments), label: 'Earnings'),
+          NavigationDestination(icon: Icon(Icons.account_balance_outlined), selectedIcon: Icon(Icons.account_balance), label: 'Stripe'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Account'),
         ],
       ),
