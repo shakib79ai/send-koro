@@ -161,7 +161,9 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 - **Offer:** "Refer a friend: give $5, get $5." The person who refers and the new customer each get **$5** of Send Koro credit.
 - **Who can earn or use credit:** phone-verified accounts only. One referral reward per person, phone number, device and card; internet (VoIP) and temporary numbers can't earn rewards. Up to 10 referral rewards per person per month (admin setting).
 - **When it's given:** the new customer's $5 when they create an account with a referral code; the referrer's $5 when the friend creates an account and verifies their phone. Admin can switch the referrer's reward to "after the friend's first completed order", which is safer against fake accounts.
-- **Credit rules:** added to the customer's wallet as a promotional gift; valid **30 days**; redeemable only at checkout on an order; oldest credit is used first; no cash value; can't be transferred or withdrawn. At least **$0.50** of each order is paid by card (Stripe's minimum charge).
+- **Credit rules:** added to the customer's wallet as a promotional gift; valid **30 days**; redeemable only at checkout on an order; oldest credit is used first; no cash value; can't be transferred or withdrawn.
+- **How much credit one order can take:** credit covers only the restaurant's part of the order (food + tax) and always leaves at least **$0.50** of it on the card. The delivery fee and tip are always paid by card, so the application fee (D + T − delivery share) always fits inside the charge.
+  - Example: $30 food + $2.66 tax + $4.92 delivery after the restaurant's $3 share + $5.40 tip = $42.98; $10 credit → card total $32.98, application fee unchanged.
 - **Promo codes** (for example WELCOME10) follow the same rules and are managed in admin (amount, end date, usage limit, once per customer).
 - **Customer apps:** a "Refer a friend" page with the person's code (NAME5) and link (`sendkoro.com/r/CODE`), share buttons and invite status; an optional "Add a promo or referral code" box at sign-up (web, PWA and apps); a "Use Send Koro credit" switch at checkout.
 - **Who pays:** Send Koro funds all credit. The restaurant still receives its full food price and couriers keep their full pay and 100% of tips.
@@ -174,7 +176,7 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
   - The restaurant's order screen shows the credit, the amount paid now and the amount reimbursed on the invoice.
   - Admin's "Customer credit" page shows the program settings, promo codes and the month's pay-back per location.
 - **Open questions:**
-  - Stripe's view on the application fee when credit lowers the charge. The application fee must still cover the delivery allocation, so the card total can't fall below D + T − delivery share; credit above that limit needs a different design.
+  - Stripe's confirmation in writing that a direct charge lowered by platform-funded credit, with the platform paying the difference back later, is acceptable.
   - Accounting treatment of credit as a marketing expense.
   - Whether credit affects the tier base. Proposed: no, because the restaurant's net food sales are unchanged.
 
