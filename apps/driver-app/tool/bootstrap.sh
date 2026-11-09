@@ -40,6 +40,8 @@ adds = {
 }
 if 'NSLocationWhenInUseUsageDescription' not in ps:
     ps = ps.replace('<dict>', '<dict>\n\t<key>NSLocationWhenInUseUsageDescription</key>\n\t<string>%s</string>' % adds['NSLocationWhenInUseUsageDescription'], 1)
+if 'NSCameraUsageDescription' not in ps:
+    ps = ps.replace('<dict>', '<dict>\n\t<key>NSCameraUsageDescription</key>\n\t<string>Send Koro flashes the camera light when a new delivery offer arrives, and uses the camera for delivery photos.</string>', 1)
 if 'LSApplicationQueriesSchemes' not in ps:
     ps = ps.replace('<dict>', '<dict>\n\t<key>LSApplicationQueriesSchemes</key>\n\t<array>\n\t\t<string>tel</string>\n\t\t<string>comgooglemaps</string>\n\t</array>', 1)
 ps = re.sub(r'(<key>CFBundleDisplayName</key>\s*<string>)[^<]*(</string>)', r'\1SK Driver\2', ps)

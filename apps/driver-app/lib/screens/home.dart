@@ -17,7 +17,11 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = DriverScope.of(context);
     final offer = s.currentOffer;
-    return Scaffold(
+    final blinking = s.online && !s.onTrip && offer != null && s.alert.blink;
+    return OfferBlink(
+      key: ValueKey(blinking ? offer!.id : 'still'),
+      active: blinking,
+      child: Scaffold(
       appBar: AppBar(
         title: const Logo(light: true, size: 22),
         actions: [
@@ -47,7 +51,72 @@ class HomeScreen extends StatelessWidget {
             _Idle(state: s),
         ]),
       ),
+    ),
     );
+  }
+}
+
+/// Blinks the whole screen red/white while a new offer waits: 4 quick blinks (2 per second, within
+/// photosensitivity guidance), then a soft red pulse until the driver answers.
+/// With "Reduce motion" on, it shows a steady red edge instead.
+class OfferBlink extends StatefulWidget {
+  const OfferBlink({super.key, required this.active, required this.child});
+  final bool active;
+  final Widget child;
+  @override
+  State<OfferBlink> createState() => _OfferBlinkState();
+}
+
+class _OfferBlinkState extends State<OfferBlink> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 1));
+  int _cycles = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _c.addStatusListener((st) {
+      if (st == AnimationStatus.completed && mounted && widget.active) {
+        _cycles++;
+        _c.forward(from: 0);
+      }
+    });
+    if (widget.active) _c.forward();
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.active) return widget.child;
+    final reduce = MediaQuery.of(context).disableAnimations;
+    return Stack(children: [
+      widget.child,
+      Positioned.fill(
+        child: IgnorePointer(
+          child: reduce
+              ? DecoratedBox(decoration: BoxDecoration(border: Border.all(color: SK.red, width: 6)))
+              : AnimatedBuilder(
+                  animation: _c,
+                  builder: (context, _) {
+                    final v = _c.value;
+                    final wave = v < 0.5 ? v * 2 : (1 - v) * 2; // 0 → 1 → 0 over one second
+                    if (_cycles < 4) {
+                      // quick blinks: red on the first half, white on the second
+                      final color = v < 0.5 ? SK.red : Colors.white;
+                      final strength = v < 0.5 ? 0.55 : 0.35;
+                      final pulse = v < 0.5 ? (v < 0.25 ? v * 4 : (0.5 - v) * 4) : (v < 0.75 ? (v - 0.5) * 4 : (1 - v) * 4);
+                      return ColoredBox(color: color.withValues(alpha: strength * pulse));
+                    }
+                    return ColoredBox(color: SK.red.withValues(alpha: 0.12 * wave));
+                  },
+                ),
+        ),
+      ),
+    ]);
   }
 }
 

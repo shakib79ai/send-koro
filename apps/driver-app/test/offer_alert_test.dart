@@ -6,10 +6,13 @@ class FakeOutput implements AlertOutput {
   int plays = 0;
   int vibrations = 0;
   int cancels = 0;
+  final torchCalls = <bool>[];
   @override
   Future<void> play() async => plays++;
   @override
   Future<void> vibrate(List<int> pattern) async => vibrations++;
+  @override
+  Future<void> torch(bool on) async => torchCalls.add(on);
   @override
   Future<void> cancel() async => cancels++;
 }
@@ -54,5 +57,14 @@ void main() {
     await again.load();
     expect(again.sound, isFalse);
     expect(again.vibrate, isTrue);
+  });
+
+  testWidgets('the flash light blinks 4 times per ring and ends off', (tester) async {
+    final out = FakeOutput();
+    final alert = OfferAlert(output: out)..start('o1');
+    await tester.pump(const Duration(seconds: 2));
+    expect(out.torchCalls.where((on) => on).length, 4);
+    expect(out.torchCalls.last, isFalse);
+    alert.stop();
   });
 }
