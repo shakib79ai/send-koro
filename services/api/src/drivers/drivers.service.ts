@@ -72,6 +72,16 @@ export class DriversService {
     return this.payments.driverOnboardingLink(d.id);
   }
 
+  async stripeOverview(user: AuthUser) {
+    const d = await this.driver(user);
+    return this.payments.stripeOverview('driver', d.id);
+  }
+
+  async stripeAccountSession(user: AuthUser) {
+    const d = await this.driver(user);
+    return this.payments.stripeAccountSession('driver', d.id);
+  }
+
   async setOnline(user: AuthUser, online: boolean, at?: { lat: number; lng: number }) {
     const d = (await this.me(user)) ?? (() => { throw notFound('Driver profile'); })();
     if (online) {

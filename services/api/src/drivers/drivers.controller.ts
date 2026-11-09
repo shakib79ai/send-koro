@@ -18,6 +18,8 @@ export class DriversController {
   @Get('me') me(@CurrentUser() u: AuthUser) { return this.drivers.me(u); }
   @Post('apply') apply(@CurrentUser() u: AuthUser, @Body() b: unknown) { return run(() => this.drivers.apply(u, parse(Apply, b))); }
   @Post('payouts/onboarding-link') payouts(@CurrentUser() u: AuthUser) { return run(() => this.drivers.payoutsLink(u)); }
+  @Get('stripe/overview') stripeOverview(@CurrentUser() u: AuthUser) { return run(() => this.drivers.stripeOverview(u)); }
+  @Post('stripe/account-session') stripeSession(@CurrentUser() u: AuthUser) { return run(() => this.drivers.stripeAccountSession(u)); }
   @Put('online') online(@CurrentUser() u: AuthUser, @Body() b: unknown) {
     const x = parse(Online, b);
     return run(() => this.drivers.setOnline(u, x.online, x.lat != null && x.lng != null ? { lat: x.lat, lng: x.lng } : undefined));

@@ -50,6 +50,8 @@
 | PUT | `/restaurants/:id/delivery-fee` | Owner. `{ rule, perOrderCapCents?, monthlyBudgetCents? }`. Each change is versioned in payments |
 | GET / POST / DELETE | `/restaurants/:id/team[/:userId]` | Add staff by phone with role `owner` · `manager` · `staff` |
 | POST | `/restaurants/:id/payouts/onboarding-link` | Owner. Opens Stripe-hosted onboarding |
+| GET | `/restaurants/:id/stripe/overview` | Owner. Stripe tab: setup state, what Stripe still needs, payout schedule, bank (last 4), balance, recent payouts |
+| POST | `/restaurants/:id/stripe/account-session` | Owner. `{ clientSecret, expiresAt, stripeAccountId }` for Connect embedded components (payments without refunds or capture, payouts, balances, documents, account management, notification banner), or `{ clientSecret: null, reason: 'no_account' }` |
 | POST | `/restaurants/:id/go-live` | Owner. Needs location, hours, tax acceptance, delivery rule and payouts; starts the plan |
 | GET / POST / PATCH / DELETE | `/restaurants/:id/menu…` | Categories and items with modifier groups. `PATCH /restaurants/menu/items/:id/availability` sets sold out (staff) |
 | GET | `/restaurant-orders/:restaurantId/live?locationId=` | Live board. Each placed order has `acceptBy` (5-minute timer) |
@@ -64,6 +66,8 @@
 | POST | `/driver/apply` | `{ name, email, vehicle: bike\|ebike\|car\|walk }` |
 | GET | `/driver/me` | `status` (applied/approved/suspended), `payoutsReady` |
 | POST | `/driver/payouts/onboarding-link` | Stripe-hosted onboarding (connected account, like restaurants) |
+| GET | `/driver/stripe/overview` | Stripe tab: setup state, what Stripe needs, payout schedule, bank, balance, payouts and weekly statements (pay, 100% tips, NYC top-ups; no fee lines) |
+| POST | `/driver/stripe/account-session` | Client secret for Connect embedded components (payouts, balances, documents incl. 1099, account management); no payments list |
 | PUT | `/driver/online` | `{ online, lat?, lng? }`. Needs admin approval and payouts first |
 | PUT | `/driver/location` | Send every 10–15 s while online |
 | GET | `/driver/offers` | Open offers: `distanceMeters`, `durationSeconds`, `payCents` (locked), `orderIds` (1 or 2), `expiresAt` (45 s) |

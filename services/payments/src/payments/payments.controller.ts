@@ -10,6 +10,7 @@ import { RefundsService } from './refunds.service';
 import { SettlementService } from './settlement.service';
 import { SubscriptionsService } from './subscriptions.service';
 import { RegistryService } from './registry.service';
+import { ConnectDashboardService } from './connect-dashboard.service';
 
 const cents = z.number().int().nonnegative();
 const QuoteBody = z.object({
@@ -68,6 +69,7 @@ export class PaymentsController {
     @Inject(TOKENS.settlement) private readonly settlement: SettlementService,
     @Inject(TOKENS.subscriptions) private readonly subs: SubscriptionsService,
     @Inject(TOKENS.registry) private readonly registry: RegistryService,
+    @Inject(TOKENS.connectDashboard) private readonly connect: ConnectDashboardService,
   ) {}
 
   // ── Registry (called by services/api) ──
@@ -94,6 +96,11 @@ export class PaymentsController {
 
   @Post('restaurants/:id/stripe/onboarding-link') async rLink(@Param('id') id: string) { return { url: await this.onboarding.restaurantOnboardingLink(id) }; }
   @Post('drivers/:id/stripe/onboarding-link') async dLink(@Param('id') id: string) { return { url: await this.onboarding.driverOnboardingLink(id) }; }
+  // ── Stripe tab in the restaurant portal and driver app ──
+  @Post('restaurants/:id/stripe/account-session') rSession(@Param('id') id: string) { return this.connect.accountSession('restaurant', id); }
+  @Post('drivers/:id/stripe/account-session') dSession(@Param('id') id: string) { return this.connect.accountSession('driver', id); }
+  @Get('restaurants/:id/stripe/overview') rOverview(@Param('id') id: string) { return this.connect.overview('restaurant', id); }
+  @Get('drivers/:id/stripe/overview') dOverview(@Param('id') id: string) { return this.connect.overview('driver', id); }
   @Post('stripe/accounts/:acct/sync') sync(@Param('acct') acct: string) { return this.onboarding.syncAccount(acct); }
 
   @Post('restaurants/:id/subscription') sub(@Param('id') id: string) { return this.subs.ensureRestaurantSubscription(id); }

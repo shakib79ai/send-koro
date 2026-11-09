@@ -17,6 +17,22 @@ export interface PaymentsQuoteRequest {
 export interface PaymentsQuote { quoteId: string; expiresAt: string; allocation: PaymentsAllocation & Record<string, number>; stripeAccount?: string | null }
 export interface PaymentsPayment { orderId: string; paymentIntentId: string; clientSecret: string; stripeAccount: string; totalCents: number }
 
+export type StripeAccountSession = { clientSecret: string; expiresAt: number; stripeAccountId: string } | { clientSecret: null; reason: 'no_account' };
+export interface StripeOverview {
+  kind: 'restaurant' | 'driver';
+  stripeAccountId: string | null;
+  displayName?: string | null;
+  setup: 'not_started' | 'pending' | 'restricted' | 'active';
+  ready: boolean;
+  requirementsDue: string[];
+  payoutSchedule: string | null;
+  bank: { name: string | null; last4: string } | null;
+  balance: { availableCents: number; pendingCents: number } | null;
+  payouts: { id: string; amountCents: number; status: string; arrivalDate: string; method: string; failureMessage: string | null }[];
+  statement?: { weekStart: string; trips: number; payCents: number; tipCents: number; topUpCents: number; totalCents: number }[];
+  error: string | null;
+}
+
 export interface PaymentsClient {
   upsertRestaurant(r: { id: string; name: string; contactEmail: string }): Promise<unknown>;
   upsertDriver(d: { id: string; name: string; contactEmail: string }): Promise<unknown>;
@@ -26,6 +42,10 @@ export interface PaymentsClient {
   driverStatus(driverId: string): Promise<{ ready: boolean; onboardingStatus: string }>;
   restaurantOnboardingLink(restaurantId: string): Promise<{ url: string }>;
   driverOnboardingLink(driverId: string): Promise<{ url: string }>;
+  /** Stripe tab: client secret for Connect embedded components (null when there's no Stripe account yet). */
+  stripeAccountSession(kind: 'restaurant' | 'driver', id: string): Promise<StripeAccountSession>;
+  /** Stripe tab: setup state, what Stripe needs, payout schedule, bank, balance, payouts, driver statements. */
+  stripeOverview(kind: 'restaurant' | 'driver', id: string): Promise<StripeOverview>;
   ensureSubscription(restaurantId: string): Promise<unknown>;
   quote(req: PaymentsQuoteRequest): Promise<PaymentsQuote>;
   createPayment(quoteId: string): Promise<PaymentsPayment>;
@@ -73,6 +93,8 @@ export class HttpPaymentsClient implements PaymentsClient {
   driverStatus(id: string) { return this.call<{ ready: boolean; onboardingStatus: string }>('GET', `/drivers/${id}/status`); }
   restaurantOnboardingLink(id: string) { return this.call<{ url: string }>('POST', `/restaurants/${id}/stripe/onboarding-link`); }
   driverOnboardingLink(id: string) { return this.call<{ url: string }>('POST', `/drivers/${id}/stripe/onboarding-link`); }
+  stripeAccountSession(kind: 'restaurant' | 'driver', id: string) { return this.call<StripeAccountSession>('POST', `/${kind}s/${id}/stripe/account-session`); }
+  stripeOverview(kind: 'restaurant' | 'driver', id: string) { return this.call<StripeOverview>('GET', `/${kind}s/${id}/stripe/overview`); }
   ensureSubscription(id: string) { return this.call('POST', `/restaurants/${id}/subscription`); }
   quote(req: PaymentsQuoteRequest) { return this.call<PaymentsQuote>('POST', '/checkout/quotes', req); }
   createPayment(quoteId: string) { return this.call<PaymentsPayment>('POST', `/checkout/quotes/${quoteId}/payment`); }

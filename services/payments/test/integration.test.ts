@@ -17,6 +17,7 @@ import { SettlementService } from '../src/payments/settlement.service';
 import { SubscriptionsService } from '../src/payments/subscriptions.service';
 import { RegistryService } from '../src/payments/registry.service';
 import { ReportsService } from '../src/payments/reports.service';
+import { ConnectDashboardService } from '../src/payments/connect-dashboard.service';
 import { WebhooksService } from '../src/webhooks/webhooks.service';
 import { createFakeStripe, signedEvent } from './fake-stripe';
 
@@ -414,6 +415,44 @@ describe('admin reports', () => {
     expect(await reports.accountPayouts('restaurant', r.id)).toMatchObject({ balance: null, payouts: [], error: expect.stringContaining('connection refused') });
     expect((await reports.driverSettlements({})).transfers[0]).toMatchObject({ amountCents: 1300, driverName: 'Rahim Uddin' });
     expect(await reports.billing()).toEqual([]);
+  });
+});
+
+describe('Stripe tab (Connect embedded components + overview)', () => {
+  it('restaurant: account session follows our money rules; overview shows schedule, bank, balance and payouts', async () => {
+    const fake = createFakeStripe(); const { r } = await seed();
+    const svc = new ConnectDashboardService(fake.stripe, db, new ReportsService(fake.stripe, db));
+    const sess = await svc.accountSession('restaurant', r.id);
+    expect(sess).toMatchObject({ clientSecret: expect.stringContaining('acct_rest1_secret'), stripeAccountId: 'acct_rest1' });
+    const c = fake.callsTo('accountSessions.create')[0].params;
+    expect(c.account).toBe('acct_rest1');
+    expect(c.components.payments.features).toMatchObject({ refund_management: false, capture_payments: false, dispute_management: true });
+    expect(c.components.payouts.features).toMatchObject({ instant_payouts: false });
+    const o = await svc.overview('restaurant', r.id);
+    expect(o).toMatchObject({ setup: 'active', ready: true, requirementsDue: [], payoutSchedule: 'Every Monday (2 days to arrive)', bank: { name: 'CHASE', last4: '4410' }, payouts: [{ id: 'po_1' }], error: null });
+    expect(o.statement).toBeUndefined();
+  });
+
+  it('driver: no payments list, weekly statement with pay, 100% tips and NYC top-ups', async () => {
+    const fake = createFakeStripe(); const s = build(fake); const { r, d } = await seed();
+    const orderId = await paidOrder(s, fake, r.id, 400);
+    await s.settlement.ownDriverDelivered(orderId, d.id, 900);
+    const svc = new ConnectDashboardService(fake.stripe, db, new ReportsService(fake.stripe, db));
+    await svc.accountSession('driver', d.id);
+    const c = fake.callsTo('accountSessions.create')[0].params.components;
+    expect(c.payments).toBeUndefined();
+    expect(c.payouts.features).toMatchObject({ instant_payouts: false, edit_payout_schedule: false });
+    const o = await svc.overview('driver', d.id);
+    expect(o.statement?.[0]).toMatchObject({ trips: 1, payCents: 900, tipCents: 400, topUpCents: 0, totalCents: 1300 });
+  });
+
+  it('no Stripe account yet: no session, overview says not started', async () => {
+    const fake = createFakeStripe();
+    const [d] = await db.insert(t.drivers).values({ name: 'New', contactEmail: 'n@test' }).returning();
+    const svc = new ConnectDashboardService(fake.stripe, db, new ReportsService(fake.stripe, db));
+    expect(await svc.accountSession('driver', d.id)).toEqual({ clientSecret: null, reason: 'no_account' });
+    expect(await svc.overview('driver', d.id)).toMatchObject({ setup: 'not_started', stripeAccountId: null, statement: [] });
+    expect(fake.callsTo('accountSessions.create')).toHaveLength(0);
   });
 });
 

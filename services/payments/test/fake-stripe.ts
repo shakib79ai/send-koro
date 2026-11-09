@@ -68,6 +68,13 @@ export function createFakeStripe(init: { availableBalance?: number; stripeFeeCen
     applicationFees: { createRefund: async (feeId: string, params: any, opts: any) => op('applicationFees.createRefund', { feeId, ...params }, opts, () => ({ id: id('fr'), fee: feeId, ...params })) },
     balance: { retrieve: async (_p?: any, opts?: any) => op('balance.retrieve', {}, opts, () => ({ available: [{ currency: 'usd', amount: state.availableBalance }], pending: [{ currency: 'usd', amount: 0 }] })) },
     payouts: { list: async (params: any, opts: any) => op('payouts.list', params, opts, () => ({ data: [{ id: 'po_1', amount: 12345, status: 'paid', arrival_date: 1_790_000_000, method: 'standard', failure_message: null }] })) },
+    accountSessions: { create: async (params: any) => op('accountSessions.create', params, undefined, () => ({ object: 'account_session', account: params.account, client_secret: `${params.account}_secret_${++seq}`, expires_at: 1_790_001_800, components: params.components })) },
+    accounts: {
+      retrieve: async (acct: string) => op('accounts.retrieve', { acct }, undefined, () => ({
+        id: acct, settings: { payouts: { schedule: { interval: 'weekly', weekly_anchor: 'monday', delay_days: 2 } } },
+        external_accounts: { data: [{ object: 'bank_account', bank_name: 'CHASE', last4: '4410' }] },
+      })),
+    },
     transfers: { create: async (params: any, opts: any) => op('transfers.create', params, opts, () => ({ id: id('tr'), ...params })) },
     prices: { list: async (params: any) => op('prices.list', params, undefined, () => ({ data: [{ id: `price_${params.lookup_keys[0]}` }] })) },
     subscriptions: {

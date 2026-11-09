@@ -18,6 +18,7 @@ import { PaymentsJobs } from './jobs/payments.jobs';
 import { RegistryService } from './payments/registry.service';
 import { HealthController } from './health.controller';
 import { ReportsService } from './payments/reports.service';
+import { ConnectDashboardService } from './payments/connect-dashboard.service';
 import { ReportsController } from './payments/reports.controller';
 
 const log = new Logger('Payments');
@@ -30,6 +31,7 @@ const log = new Logger('Payments');
     { provide: TOKENS.stripe, useFactory: (env: Env) => createStripe(env.STRIPE_SECRET_KEY), inject: [TOKENS.env] },
     { provide: TOKENS.db, useFactory: (env: Env) => createDb(env.DATABASE_URL).db, inject: [TOKENS.env] },
     { provide: TOKENS.reports, useFactory: (s: Stripe, db: Db) => new ReportsService(s, db), inject: [TOKENS.stripe, TOKENS.db] },
+    { provide: TOKENS.connectDashboard, useFactory: (s: Stripe, db: Db, r: ReportsService) => new ConnectDashboardService(s, db, r), inject: [TOKENS.stripe, TOKENS.db, TOKENS.reports] },
     { provide: TOKENS.registry, useFactory: (db: Db) => new RegistryService(db), inject: [TOKENS.db] },
     { provide: TOKENS.ledger, useFactory: (s: Stripe, db: Db) => new LedgerService(s, db), inject: [TOKENS.stripe, TOKENS.db] },
     {

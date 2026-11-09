@@ -57,5 +57,7 @@ export class RestaurantsController {
   @Delete(':id/team/:userId') removeTeammate(@CurrentUser() u: AuthUser, @Param('id') id: string, @Param('userId') userId: string) { return run(() => this.r.removeTeammate(u, id, userId)); }
 
   @Post(':id/payouts/onboarding-link') payouts(@CurrentUser() u: AuthUser, @Param('id') id: string) { return run(() => this.r.payoutsLink(u, id)); }
+  @Get(':id/stripe/overview') stripeOverview(@CurrentUser() u: AuthUser, @Param('id') id: string) { return run(() => this.r.stripeOverview(u, id)); }
+  @Post(':id/stripe/account-session') stripeSession(@CurrentUser() u: AuthUser, @Param('id') id: string) { return run(() => this.r.stripeAccountSession(u, id)); }
   @Post(':id/go-live') goLive(@CurrentUser() u: AuthUser, @Param('id') id: string) { return run(() => this.r.goLive(u, id)); }
 }

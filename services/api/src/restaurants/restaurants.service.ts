@@ -194,6 +194,17 @@ export class RestaurantsService {
     return this.payments.restaurantOnboardingLink(restaurantId);
   }
 
+  /** Stripe tab (owner only: it shows bank details, balance and payouts). */
+  async stripeOverview(user: AuthUser, restaurantId: string) {
+    await this.requireMember(user, restaurantId, 'owner');
+    return this.payments.stripeOverview('restaurant', restaurantId);
+  }
+
+  async stripeAccountSession(user: AuthUser, restaurantId: string) {
+    await this.requireMember(user, restaurantId, 'owner');
+    return this.payments.stripeAccountSession('restaurant', restaurantId);
+  }
+
   async goLive(user: AuthUser, restaurantId: string) {
     const full = await this.get(user, restaurantId);
     await this.requireMember(user, restaurantId, 'owner');

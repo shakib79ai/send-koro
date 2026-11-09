@@ -41,6 +41,15 @@ export function createFakePayments() {
     async driverStatus(id) { return { ready: drivers.get(id)?.ready ?? false, onboardingStatus: 'active' }; },
     async restaurantOnboardingLink(id) { return { url: `https://connect.stripe.test/r/${id}` }; },
     async driverOnboardingLink(id) { return { url: `https://connect.stripe.test/d/${id}` }; },
+    async stripeAccountSession(kind, id) { rec('stripeAccountSession', kind, id); return { clientSecret: `accs_${kind}_${id.slice(0, 8)}_secret`, expiresAt: 1_790_001_800, stripeAccountId: `acct_${kind}` }; },
+    async stripeOverview(kind, id) {
+      rec('stripeOverview', kind, id);
+      return {
+        kind, stripeAccountId: `acct_${kind}`, setup: 'active', ready: true, requirementsDue: [], payoutSchedule: 'Every day (2 days to arrive)',
+        bank: { name: 'CHASE', last4: '4410' }, balance: { availableCents: 4120, pendingCents: 1300 }, payouts: [],
+        ...(kind === 'driver' ? { statement: [{ weekStart: '2026-11-02', trips: 1, payCents: 780, tipCents: 540, topUpCents: 0, totalCents: 1320 }] } : {}), error: null,
+      };
+    },
     async ensureSubscription(id) { rec('ensureSubscription', id); return {}; },
     async quote(req) {
       rec('quote', req);

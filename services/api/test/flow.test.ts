@@ -146,6 +146,19 @@ describe('restaurant setup', () => {
     await expect(app.restaurants.addFee(s.owner, s.r.id, { kind: 'mandatory_gratuity', label: 'Staff fee', rateBps: 1800 })).rejects.toMatchObject({ code: 'invalid_fee' });
     expect(app.fake.callsTo('setDeliveryConsent')).toHaveLength(1);
   });
+
+  it('Stripe tab: only the owner sees Stripe details; staff are refused', async () => {
+    const app = build();
+    const s = await liveRestaurant(app);
+    const o = await app.restaurants.stripeOverview(s.owner, s.r.id);
+    expect(o).toMatchObject({ kind: 'restaurant', setup: 'active', bank: { last4: '4410' } });
+    expect(await app.restaurants.stripeAccountSession(s.owner, s.r.id)).toMatchObject({ clientSecret: expect.stringContaining('secret') });
+    const staff = await app.restaurants.addTeammate(s.owner, s.r.id, { phone: '+19175550112', role: 'staff' });
+    const staffUser: AuthUser = { id: staff.userId, role: 'restaurant_staff', phone: staff.phone };
+    await expect(app.restaurants.stripeOverview(staffUser, s.r.id)).rejects.toMatchObject({ code: 'forbidden' });
+    await expect(app.restaurants.stripeAccountSession(staffUser, s.r.id)).rejects.toMatchObject({ code: 'forbidden' });
+    expect(app.fake.callsTo('stripeAccountSession')).toHaveLength(1);
+  });
 });
 
 describe('ordering → third-party courier', () => {
@@ -263,6 +276,8 @@ describe('own drivers: locked offers, batching, pay', () => {
     await app.admin.setDriverStatus(d.id, 'approved');
     await expect(app.drivers.setOnline(u, true, at)).rejects.toMatchObject({ code: 'payouts_not_ready' });
     app.fake.drivers.get(d.id)!.ready = true;
+    expect(await app.drivers.stripeOverview(u)).toMatchObject({ kind: 'driver', statement: [{ payCents: 780, tipCents: 540 }] });
+    expect(app.fake.callsTo('stripeOverview').at(-1)!.args).toEqual(['driver', d.id]);
     await app.drivers.setOnline(u, true, at);
     return { u, d };
   }
