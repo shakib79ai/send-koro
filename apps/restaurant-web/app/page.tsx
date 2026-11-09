@@ -53,8 +53,8 @@ export default function LiveOrders() {
   }, [restaurant, load]);
 
   const fresh = orders.filter((o) => o.status === 'placed');
-  // Rings every 10 s, blinks the screen and flashes the tab title until every new order is answered.
-  const { enabled, enable, blinking, ringKey } = useOrderAlert(fresh.map((o) => o.id));
+  // Rings every 10 s and flashes the tab title until every new order is answered.
+  const { enabled, enable } = useOrderAlert(fresh.map((o) => o.id));
 
   if (!restaurant) return null;
 
@@ -79,7 +79,6 @@ export default function LiveOrders() {
 
   return (
     <div>
-      {blinking && <div key={ringKey} className="order-blink" aria-hidden="true" />}
       <div className="page-head">
         <div><h1>Live orders</h1><p className="small muted" style={{ margin: '4px 0 0' }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' })} · New York time</p></div>
         <div className="row" style={{ flexWrap: 'wrap' }}>

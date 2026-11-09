@@ -2,14 +2,13 @@
 /**
  * New-order alert for the Live orders screen.
  * While any order waits for an answer: plays /sounds/new-order.mp3 ("order up": two counter-bell dings and a
- * rising tune) at once and every 10 seconds, blinks the screen (at most 2 flashes a second, then a soft pulse),
- * flashes the tab title, shows a system notification when the tab is in the background, and keeps the screen on.
+ * rising tune) at once and every 10 seconds, flashes the tab title, shows a system notification when the tab is
+ * in the background, and keeps the screen on. No screen flashing (owner's decision).
  * Browsers only allow sound after one tap, so the page shows "Turn on order sound" until then.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const SOUND_KEY = 'sk.sound';
-export const BLINK_KEY = 'sk.blink';
 export const RING_EVERY_MS = 10_000;
 
 function readFlag(key: string, fallback: boolean) {
@@ -44,7 +43,7 @@ export function useOrderSound() {
       src.buffer = b;
       src.connect(c.destination);
       src.start();
-    } catch { /* audio blocked or file missing: the blink and title still alert */ }
+    } catch { /* audio blocked or file missing: the tab title and notification still alert */ }
   }, [enabled, load]);
 
   /** Must run inside a tap or click. */
@@ -57,22 +56,18 @@ export function useOrderSound() {
   return { enabled, enable, play };
 }
 
-/** Rings, blinks and notifies while `waiting` (ids of orders that need an answer) is not empty. */
+/** Rings and notifies while `waiting` (ids of orders that need an answer) is not empty. */
 export function useOrderAlert(waiting: string[]) {
   const sound = useOrderSound();
   const { play } = sound;
-  const [blinkOn, setBlinkOn] = useState(true);
-  const [ringKey, setRingKey] = useState(0); // bumps on every ring, restarting the blink animation
   const notified = useRef(new Set<string>());
   const count = waiting.length;
   const ids = waiting.join(',');
 
-  useEffect(() => { setBlinkOn(readFlag(BLINK_KEY, true)); }, []);
-
   // Ring at once and every 10 s until nothing is waiting.
   useEffect(() => {
     if (!count) return;
-    const ring = () => { void play(); setRingKey((k) => k + 1); };
+    const ring = () => { void play(); };
     ring();
     const t = setInterval(ring, RING_EVERY_MS);
     return () => clearInterval(t);
@@ -109,5 +104,5 @@ export function useOrderAlert(waiting: string[]) {
     return () => { document.removeEventListener('visibilitychange', onVisible); void lock?.release().catch(() => undefined); };
   }, []);
 
-  return { ...sound, blinking: count > 0 && blinkOn, ringKey };
+  return sound;
 }
