@@ -160,7 +160,7 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 
 - **Offer:** "Refer a friend: give $5, get $5." The person who refers and the new customer each get **$5** of Send Koro credit.
 - **Who can earn or use credit:** phone-verified accounts only. One referral reward per person, phone number, device and card; internet (VoIP) and temporary numbers can't earn rewards. Up to 10 referral rewards per person per month (admin setting).
-- **When it's given:** the new customer's $5 when they create an account with a referral code; the referrer's $5 when the friend creates an account and verifies their phone. Admin can switch the referrer's reward to "after the friend's first completed order", which is safer against fake accounts.
+- **When it's given (decided 9 Nov 2026):** the new customer's $5 when they create an account with a referral code and verify their phone; the referrer's $5 **after the friend's first completed order** (delivered or picked up, not refunded in full), which protects against fake accounts. Admin can switch the referrer's reward to "when the friend verifies their phone", but the default is the first order.
 - **Credit rules:** added to the customer's wallet as a promotional gift; valid **30 days**; redeemable only at checkout on an order; oldest credit is used first; no cash value; can't be transferred or withdrawn.
 - **How much credit one order can take:** credit covers only the restaurant's part of the order (food + tax) and always leaves at least **$0.50** of it on the card. The delivery fee and tip are always paid by card, so the application fee (D + T − delivery share) always fits inside the charge.
   - Example: $30 food + $2.66 tax + $4.92 delivery after the restaurant's $3 share + $5.40 tip = $42.98; $10 credit → card total $32.98, application fee unchanged.
@@ -170,7 +170,7 @@ The customer always sees a single line, **"Delivery fee"**, then any "Free deliv
 - **How the money moves:**
   - The customer's card is charged the order total minus the credit, as a direct charge on the restaurant's account, so the restaurant receives the credit amount less at the time of the order.
   - Send Koro pays it back as a "Send Koro promo credit" line on the restaurant's next monthly plan invoice.
-  - If the credit is more than that month's plan fee, the remainder is sent to the restaurant's Stripe account (proposed; to be confirmed).
+  - If the credit is more than that month's plan fee, the remainder is sent to the restaurant's Stripe account in the same monthly run (decided 9 Nov 2026), so restaurants are never left waiting.
 - **Receipts and statements:**
   - The customer receipt shows "Send Koro credit (promo)" and the card total.
   - The restaurant's order screen shows the credit, the amount paid now and the amount reimbursed on the invoice.
