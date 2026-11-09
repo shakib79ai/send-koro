@@ -3,12 +3,13 @@
  * Live orders. New orders ring until someone accepts (or the 5-minute auto-decline releases the
  * customer's card hold). Accepting charges the card; declining releases it.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, ApiError, liveStream } from '@/lib/api';
 import { usePortal } from '@/lib/portal';
 import { usd } from '@/lib/money';
 import type { LiveOrder, Summary } from '@/lib/types';
 import { Switch } from '@/components/ui';
+import { useOrderAlert } from '@/lib/orderAlert';
 
 const COURIER_TEXT: Record<string, string> = {
   requested: 'Finding a courier', offered: 'Finding a courier', assigned: 'Courier on the way', at_pickup: 'Courier is here',
@@ -22,33 +23,6 @@ function nyMidnight() {
   return new Date(now.getTime() - (ny.getHours() * 3600 + ny.getMinutes() * 60 + ny.getSeconds()) * 1000);
 }
 
-/** Two-tone chime via Web Audio (no sound file needed). Browsers require one tap to enable audio. */
-function useChime() {
-  const ctx = useRef<AudioContext | null>(null);
-  const [enabled, setEnabled] = useState(false);
-  useEffect(() => { try { setEnabled(localStorage.getItem('sk.sound') === 'on'); } catch { /* ignore */ } }, []);
-  const enable = () => {
-    ctx.current ??= new AudioContext();
-    void ctx.current.resume();
-    setEnabled(true);
-    try { localStorage.setItem('sk.sound', 'on'); } catch { /* ignore */ }
-  };
-  const play = useCallback(() => {
-    if (!enabled) return;
-    ctx.current ??= new AudioContext();
-    const c = ctx.current;
-    [880, 1175].forEach((f, i) => {
-      const o = c.createOscillator(), g = c.createGain();
-      o.frequency.value = f; o.type = 'sine';
-      g.gain.setValueAtTime(0.0001, c.currentTime + i * 0.22);
-      g.gain.exponentialRampToValueAtTime(0.35, c.currentTime + i * 0.22 + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + i * 0.22 + 0.2);
-      o.connect(g).connect(c.destination); o.start(c.currentTime + i * 0.22); o.stop(c.currentTime + i * 0.22 + 0.22);
-    });
-  }, [enabled]);
-  return { enabled, enable, play };
-}
-
 export default function LiveOrders() {
   const { restaurant, reload } = usePortal();
   const [orders, setOrders] = useState<LiveOrder[]>([]);
@@ -57,7 +31,6 @@ export default function LiveOrders() {
   const [error, setError] = useState('');
   const [declining, setDeclining] = useState<LiveOrder | null>(null);
   const [locationId, setLocationId] = useState<string>('');
-  const { enabled, enable, play } = useChime();
 
   const load = useCallback(async () => {
     if (!restaurant) return;
@@ -80,12 +53,8 @@ export default function LiveOrders() {
   }, [restaurant, load]);
 
   const fresh = orders.filter((o) => o.status === 'placed');
-  useEffect(() => {
-    if (!fresh.length) return;
-    play();
-    const t = setInterval(play, 4000); // repeats until someone accepts
-    return () => clearInterval(t);
-  }, [fresh.length, play]);
+  // Rings every 10 s, blinks the screen and flashes the tab title until every new order is answered.
+  const { enabled, enable, blinking, ringKey } = useOrderAlert(fresh.map((o) => o.id));
 
   if (!restaurant) return null;
 
@@ -110,6 +79,7 @@ export default function LiveOrders() {
 
   return (
     <div>
+      {blinking && <div key={ringKey} className="order-blink" aria-hidden="true" />}
       <div className="page-head">
         <div><h1>Live orders</h1><p className="small muted" style={{ margin: '4px 0 0' }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', timeZone: 'America/New_York' })} · New York time</p></div>
         <div className="row" style={{ flexWrap: 'wrap' }}>
