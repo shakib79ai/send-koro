@@ -10,6 +10,7 @@ const NAV: { section?: string; href: string; label: string; icon: string }[] = [
   { href: '/orders', label: 'Order history', icon: '☰' },
   { href: '/menu', label: 'Menu', icon: '▤' },
   { href: '/earnings', label: 'Earnings & payouts', icon: '$' },
+  { href: '/stripe', label: 'Stripe', icon: 'S' },
   { section: 'Settings', href: '/settings/delivery-fee', label: 'Delivery fee', icon: '➜' },
   { href: '/settings/taxes', label: 'Taxes & fees', icon: '%' },
   { href: '/settings/locations', label: 'Locations & area', icon: '⌖' },

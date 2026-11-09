@@ -27,3 +27,11 @@ export interface ModifierOption { id: string; name: string; priceCents: number; 
 export interface ModifierGroup { id: string; name: string; minSelect: number; maxSelect: number; options: ModifierOption[] }
 export interface MenuItem { id: string; categoryId: string | null; name: string; description: string | null; priceCents: number; imageUrl: string | null; allergens: string[]; dietary: string[]; taxable: boolean; available: boolean; soldOutUntil: string | null; groups: ModifierGroup[] }
 export interface Menu { categories: { id: string; name: string; sortOrder: number; items: MenuItem[] }[]; uncategorized: MenuItem[] }
+export interface StripeOverview {
+  kind: 'restaurant' | 'driver'; stripeAccountId: string | null; displayName?: string | null;
+  setup: 'not_started' | 'pending' | 'restricted' | 'active'; ready: boolean; requirementsDue: string[];
+  payoutSchedule: string | null; bank: { name: string | null; last4: string } | null;
+  balance: { availableCents: number; pendingCents: number } | null;
+  payouts: { id: string; amountCents: number; status: string; arrivalDate: string; method: string; failureMessage: string | null }[];
+  error: string | null;
+}
